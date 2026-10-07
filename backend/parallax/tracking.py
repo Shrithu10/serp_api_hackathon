@@ -13,7 +13,7 @@ import time
 
 from . import storage
 from .engine import full_scan, gateway
-from .serp import SerpGateway
+from .serp import SerpGateway, redact
 from .vantages import ALL_VANTAGES, LENSES, Vantage, custom_vantage
 
 log = logging.getLogger("parallax.tracking")
@@ -60,7 +60,7 @@ async def scheduler() -> None:
                     await run_watch(w)
                 except Exception as e:  # keep the loop alive; show the error in the UI
                     log.warning("tracked search %s failed: %s", w["id"], e)
-                    storage.update_watch(w["id"], last_error=str(e)[:300], next_run=time.time() + 3600)
+                    storage.update_watch(w["id"], last_error=redact(e)[:300], next_run=time.time() + 3600)
         except Exception as e:  # noqa: BLE001
             log.warning("tracking scheduler error: %s", e)
         await asyncio.sleep(CHECK_EVERY)

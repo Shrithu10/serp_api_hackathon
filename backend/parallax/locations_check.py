@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import serpapi
 
+from .serp import redact
 from .vantages import ALL_VANTAGES
 
 
@@ -31,7 +32,7 @@ def check_locations() -> list[dict]:
         except Exception as e:  # network / API problem: report, don't guess
             if "connect" in type(e).__name__.lower() or "connect" in str(e).lower() or "Max retries" in str(e):
                 unreachable = "SerpApi unreachable"
-            seen[v.location] = {"location": v.location, "ok": None, "error": unreachable or str(e)[:120], "suggestion": None}
+            seen[v.location] = {"location": v.location, "ok": None, "error": unreachable or redact(e)[:120], "suggestion": None}
             continue
         names = [r.get("canonical_name", "") for r in rows]
         ok = any(_norm(n) == _norm(v.location) for n in names)

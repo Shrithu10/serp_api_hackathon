@@ -22,6 +22,7 @@ from pydantic import BaseModel, Field  # noqa: E402
 from . import brief, storage, translations  # noqa: E402
 from .analysis import analyze  # noqa: E402
 from .engine import gateway, search_vantage, trends_for  # noqa: E402
+from .serp import redact  # noqa: E402
 from .vantages import ALL_VANTAGES, LENSES, Vantage, custom_vantage  # noqa: E402
 
 app = FastAPI(title="PARALLAX", version="1.0.0")
@@ -48,7 +49,7 @@ async def account():
     try:
         return await gateway.account()
     except Exception as e:
-        return JSONResponse({"error": str(e)}, status_code=502)
+        return JSONResponse({"error": redact(e)}, status_code=502)
 
 
 @app.get("/api/locations")
@@ -254,7 +255,7 @@ async def scan(
             try:
                 return v, await search_vantage(v, queries[v.id], follow_ai), None
             except Exception as e:
-                return v, None, str(e)
+                return v, None, redact(e)
 
         tasks = [asyncio.create_task(run(v)) for v in chosen]
         trend_task = asyncio.create_task(trends_for(q)) if trends else None

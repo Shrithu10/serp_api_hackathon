@@ -7,6 +7,7 @@ import asyncio
 import hashlib
 import json
 import os
+import re
 import time
 from pathlib import Path
 
@@ -18,6 +19,11 @@ ROOT = Path(__file__).resolve().parent.parent
 CACHE_DIR = Path(os.getenv("PARALLAX_CACHE_DIR", ROOT / ".cache"))
 FIXTURE_DIR = ROOT / "fixtures"
 CACHE_TTL = int(os.getenv("PARALLAX_CACHE_TTL", 6 * 3600))
+
+
+def redact(text: object) -> str:
+    """Error text with any api_key removed: request-library messages can embed the full URL."""
+    return re.sub(r"(api_key=)[^&\s'\"]+", r"\1REDACTED", str(text))
 
 
 def _key(params: dict) -> str:
@@ -94,11 +100,15 @@ class SerpGateway:
         try:
             return self.client.search(dict(params)).as_dict()
         except serpapi.HTTPError as e:  # SerpApi returns JSON error bodies
-            resp = getattr(e, "response", None) or getattr(e.args[0] if e.args else None, "response", None)
+            # A 4xx/5xx Response is falsy, so test for None; never fall back to str(e),
+            # which embeds the request URL (and with it the api_key).
+            if getattr(e, "error", None):
+                return {"error": e.error}
+            resp = getattr(e, "response", None)
             try:
-                return resp.json()
+                return resp.json() if resp is not None else {"error": f"SerpApi request failed ({type(e).__name__})"}
             except Exception:
-                return {"error": str(e)}
+                return {"error": f"SerpApi request failed (HTTP {getattr(e, 'status_code', '?')})"}
 
     async def account(self) -> dict:
         if not self.live:

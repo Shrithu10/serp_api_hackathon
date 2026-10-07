@@ -7,7 +7,7 @@ import time
 
 from .analysis import analyze
 from .normalize import normalize
-from .serp import SerpError, SerpGateway
+from .serp import SerpError, SerpGateway, redact
 from .vantages import Vantage
 
 gateway = SerpGateway()
@@ -53,7 +53,7 @@ async def trends_for(q: str, gw: SerpGateway | None = None) -> dict:
         try:
             raw, origin = await task
         except Exception as e:
-            out[f"{name}_error"] = str(e)
+            out[f"{name}_error"] = redact(e)
             continue
         out["calls"].append(origin)
         if name == "geo":
