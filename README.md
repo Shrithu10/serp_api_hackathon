@@ -72,6 +72,8 @@ Filter bubbles are usually discussed for social feeds. **Search is the bigger an
 
 <img src="docs/receipt.jpg" width="420" alt="Cost and cache receipt" />
 
+**One-click sharing.** Under the AI answer diff and the top-3 finding there's a *Share this finding* row: post to X, share on LinkedIn, copy, or use the phone's share sheet. The text is written for you, for example *“Just 2 websites (wikipedia.org and youtube.com) hold 43% of Google's top-3 spots for ‘air pollution’ across 12 places. Explored with Parallax + @SerpApi #BuiltWithSerpApi”*. Findings from demo data are tagged “[sample data]” so made-up numbers never travel as real ones.
+
 **Zero-friction start.** On first run Parallax builds six ready-made examples, so the start page shows the most divided one before you type anything. **🎲 Surprise me** opens one of the most divided examples instantly, at no cost. The examples are built from recorded SerpApi responses when you've recorded them (`python -m parallax.record "<query>"`, then `python -m parallax.examples`), and otherwise from labelled sample data.
 
 ### Built to be used, not just looked at
@@ -179,6 +181,35 @@ cd frontend && npm install && npm run dev                                   # te
 ```
 </details>
 
+### The command line
+
+```text
+$ cd backend && python -m parallax
+██████╗  █████╗ ██████╗  █████╗ ██╗     ██╗      █████╗ ██╗  ██╗
+...
+[PARALLAX v1.0] - One query. Twelve Indias.  Search data via SerpApi
+
+  ✓ SerpApi key found: live Google results (Search · AI Overview · Trends · Locations · Account)
+  ✓ Disk cache ready: 41 saved responses, reused for 6 h (repeat searches cost 0 credits)
+  ✓ History database ready: 7 saved searches, 6 ready-made examples (parallax.db)
+  ✓ 32 vantage points across 3 lenses (cities · languages · world)
+  ✓ Claude analyst enabled: written analysis + query translation
+  ✓ Web interface built
+  ✓ MCP tool server available: `python -m parallax mcp` (tools: parallax_scan, parallax_lenses)
+
+  → Open http://localhost:8000
+```
+
+Every line is a real startup check: missing keys show as warnings, and broken setups as errors with the fix. The other commands:
+
+| Command | What it does |
+|---|---|
+| `python -m parallax` | Start the web app (`--port`, `--host`, `--reload`, `--quiet`) |
+| `python -m parallax check` | Run the startup checks only (exit code 1 if something is broken) |
+| `python -m parallax mcp` | Run the MCP tool server on stdio for AI agents |
+| `python -m parallax record "query" --lens cities` | Record real SerpApi responses for offline demos |
+| `python -m parallax examples` | Rebuild the ready-made example scans |
+
 | Variable | Required | Purpose |
 |---|---|---|
 | `SERPAPI_API_KEY` | for live data | Free key at [serpapi.com](https://serpapi.com/users/sign_up), 250 searches/month |
@@ -201,7 +232,7 @@ Recorded fixtures are then replayed whenever the key is absent.
   "mcpServers": {
     "parallax": {
       "command": "/path/to/serp_api_hackathon/.venv/bin/python",
-      "args": ["-m", "parallax.mcp_server"],
+      "args": ["-m", "parallax", "mcp"],
       "cwd": "/path/to/serp_api_hackathon/backend"
     }
   }

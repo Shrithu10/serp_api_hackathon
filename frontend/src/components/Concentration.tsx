@@ -1,6 +1,7 @@
 import type { Analysis } from "../lib/types";
 import Favicon from "./Favicon";
 import Help from "./Help";
+import ShareInsight from "./ShareInsight";
 
 const LEVEL = {
   concentrated: { title: "Concentrated", tone: "border-accent bg-accent-soft/50", word: "text-accent" },
@@ -9,7 +10,7 @@ const LEVEL = {
 };
 
 /** Who owns the top three spots, across every place searched? */
-export default function Concentration({ a, places }: { a: Analysis; places: number }) {
+export default function Concentration({ a, places, sample }: { a: Analysis; places: number; sample: boolean }) {
   const c = a.concentration;
   if (!c) return null;
   const L = LEVEL[c.level];
@@ -55,6 +56,14 @@ export default function Concentration({ a, places }: { a: Analysis; places: numb
         ))}
         <span className="text-muted">everyone else {Math.round((1 - c.top.reduce((s, t) => s + t.share, 0)) * 100)}%</span>
       </div>
+      <ShareInsight
+        sample={sample}
+        text={
+          c.level === "diverse"
+            ? `For “${a.query}”, Google's top 3 spots across ${places} places in India are shared among ${c.distinct} different websites.`
+            : `Just ${top2.length} websites (${top2.join(" and ")}) hold ${Math.round(c.top2_share * 100)}% of Google's top-3 spots for “${a.query}” across ${places} places.`
+        }
+      />
     </div>
   );
 }

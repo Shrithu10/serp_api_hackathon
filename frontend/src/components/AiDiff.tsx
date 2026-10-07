@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import type { Analysis, Vantage, VantageResult } from "../lib/types";
 import { wordDiff, type DiffPart } from "../lib/textdiff";
 import Help from "./Help";
+import ShareInsight from "./ShareInsight";
 
 function Text({ parts, tone }: { parts: DiffPart[]; tone: "left" | "right" }) {
   return (
@@ -20,7 +21,7 @@ function Text({ parts, tone }: { parts: DiffPart[]; tone: "left" | "right" }) {
 }
 
 /** Two places' AI Overview answers, with the wording that differs highlighted. */
-export default function AiDiff({ a, vmap, results }: { a: Analysis; vmap: Record<string, Vantage>; results: Record<string, VantageResult> }) {
+export default function AiDiff({ a, vmap, results, sample }: { a: Analysis; vmap: Record<string, Vantage>; results: Record<string, VantageResult>; sample: boolean }) {
   const withText = a.order.filter((id) => (results[id]?.ai_overview?.text || "").trim().length > 20);
   const [pair, setPair] = useState<[string, string]>(() =>
     a.ai_text ? [a.ai_text.most_different.a, a.ai_text.most_different.b] : [withText[0], withText[1]],
@@ -81,6 +82,10 @@ export default function AiDiff({ a, vmap, results }: { a: Analysis; vmap: Record
       <p className="mt-3 text-[13px] text-muted">
         Grey text is shared by both answers. The default pair is the two places whose AI answers are worded most differently.
       </p>
+      <ShareInsight
+        sample={sample}
+        text={`Searching Google for “${a.query}” from ${vmap[x]?.label} vs ${vmap[y]?.label}: the AI Overview answers share only ${pct}% of their wording.`}
+      />
     </div>
   );
 }

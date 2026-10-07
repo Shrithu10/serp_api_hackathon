@@ -331,7 +331,7 @@ export default function App() {
                 <Section id="summary" kicker="The short answer" title={`Does where you search change what you see?`}>
                   <Summary a={a} lens={state.lens} vmap={vmap} brief={state.brief} streaming={state.status === "analyzing"} ai={!!config?.ai} changes={changes} prevWhen={prev ? timeAgo(prev.created_at) : null} />
                   <div className="mt-10">
-                    <Concentration a={a} places={ids.length} />
+                    <Concentration a={a} places={ids.length} sample={!!state.done?.synthetic} />
                   </div>
                 </Section>
 
@@ -352,7 +352,7 @@ export default function App() {
                 </Section>
 
                 <Section id="ai" kicker="Google's AI Overview" title="Does Google's AI answer the same way everywhere?" intro="Google now writes an AI answer above the results for many searches. Here are two places' answers side by side, with the words that differ highlighted, and below them the sources each place's AI relied on.">
-                  <AiDiff a={a} vmap={vmap} results={state.results} />
+                  <AiDiff a={a} vmap={vmap} results={state.results} sample={!!state.done?.synthetic} />
                   <h3 className="mb-4 mt-14 text-[21px]">Which sources does the AI cite in each place?</h3>
                   <AiLens analysis={a} vmap={vmap} results={state.results} />
                 </Section>
