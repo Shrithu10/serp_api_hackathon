@@ -45,6 +45,8 @@ async def parallax_scan(query: str, lens: str = "cities") -> dict:
         "exclusives": {label[i]: [e["domain"] for e in ex] for i, ex in a["exclusives"].items() if ex},
         "top_results": {label[i]: [o["domain"] for o in r["organic"][:5]] for i, r in results.items()},
         "ai_overview_rate": a["ai_rate"],
+        "top3_concentration": {"level": a["concentration"]["level"], "top2_share": a["concentration"]["top2_share"], "top_sites": [t["domain"] for t in a["concentration"]["top"][:4]]},
+        "ai_answer_wording_overlap": a["ai_text"]["avg_similarity"] if a["ai_text"] else None,
         "facts": a["facts"],
     }
 

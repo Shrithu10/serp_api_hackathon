@@ -32,6 +32,8 @@ export const initialScan: ScanState = {
   startedAt: 0,
   id: null,
   savedAt: null,
+  reopened: false,
+  example: false,
 };
 
 function log(state: ScanState, line: Omit<LogLine, "t">): LogLine[] {
@@ -61,6 +63,8 @@ function reducer(state: ScanState, a: Action): ScanState {
         done: { ...p.done, id: a.scan.id },
         id: a.scan.id,
         savedAt: a.scan.created_at,
+        reopened: true,
+        example: !!a.scan.summary.example,
       };
     }
     case "start":

@@ -38,7 +38,7 @@ def _norm(q: str) -> str:
     return " ".join(q.lower().split())
 
 
-def save(query: str, lens: str, live: bool, payload: dict) -> str:
+def save(query: str, lens: str, live: bool, payload: dict, example: bool = False) -> str:
     a = payload.get("analysis") or {}
     plain = a.get("plain") or {}
     summary = {
@@ -49,6 +49,8 @@ def save(query: str, lens: str, live: bool, payload: dict) -> str:
         "avg_differ": plain.get("avg_differ"),
         "top1": plain.get("top1_domain"),
         "synthetic": (payload.get("done") or {}).get("synthetic", False),
+        "example": example,
+        "top2_share": (a.get("concentration") or {}).get("top2_share"),
     }
     sid = secrets.token_urlsafe(6)
     with _conn() as c:
@@ -75,11 +77,17 @@ def _row(r: sqlite3.Row, full: bool) -> dict:
 
 def list_scans(limit: int = 50, query: str | None = None) -> list[dict]:
     with _conn() as c:
-        rows = c.execute("SELECT id, created_at, query, lens, live, summary FROM scans ORDER BY created_at DESC LIMIT ?", (limit * 4 if query else limit,)).fetchall()
-    out = [_row(r, False) for r in rows]
+        rows = c.execute("SELECT id, created_at, query, lens, live, summary FROM scans ORDER BY created_at DESC LIMIT ?", (limit * 4 + 20,)).fetchall()
+    out = [s for s in (_row(r, False) for r in rows) if not s["summary"].get("example")]
     if query:
-        out = [s for s in out if _norm(query) in _norm(s["query"])][:limit]
-    return out
+        out = [s for s in out if _norm(query) in _norm(s["query"])]
+    return out[:limit]
+
+
+def list_examples() -> list[dict]:
+    with _conn() as c:
+        rows = c.execute("SELECT id, created_at, query, lens, live, summary FROM scans ORDER BY created_at ASC").fetchall()
+    return [s for s in (_row(r, False) for r in rows) if s["summary"].get("example")]
 
 
 def get(sid: str) -> dict | None:
@@ -99,7 +107,7 @@ def previous(sid: str) -> dict | None:
             (cur["lens"], cur["created_at"]),
         ).fetchall()
     for r in rows:
-        if _norm(r["query"]) == _norm(cur["query"]):
+        if _norm(r["query"]) == _norm(cur["query"]) and not json.loads(r["summary"]).get("example"):
             return _row(r, True)
     return None
 

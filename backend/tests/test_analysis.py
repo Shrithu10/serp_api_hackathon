@@ -104,3 +104,27 @@ def test_storage_roundtrip(tmp_path, monkeypatch):
     assert storage.previous(first) is None
     assert [s["id"] for s in storage.list_scans()] == [second, first]
     assert storage.delete(first) and storage.get(first) is None
+
+
+def test_concentration_and_ai_text():
+    q = "is ayurveda effective"
+    results = {v.id: normalize(demo.google(v.params(q))) for v in CITIES}
+    a = analyze(q, [v.to_dict() for v in CITIES], results)
+    c = a["concentration"]
+    assert c["slots"] == sum(min(3, len(r["organic"])) for r in results.values())
+    assert 0 < c["top2_share"] <= 1 and c["level"] in {"concentrated", "moderate", "diverse"}
+    assert sum(t["count"] for t in c["top"]) <= c["slots"]
+    if a["ai_text"]:
+        assert 0 <= a["ai_text"]["most_different"]["sim"] <= a["ai_text"]["avg_similarity"] <= a["ai_text"]["most_similar"]["sim"] <= 1
+
+
+def test_examples_build_offline(tmp_path, monkeypatch):
+    from parallax import examples, storage
+
+    monkeypatch.setattr(storage, "DB_PATH", tmp_path / "e.db")
+    monkeypatch.setattr(examples, "EXAMPLES", [("air pollution", "cities")])
+    ids = asyncio.run(examples.build())
+    assert len(ids) == 1
+    assert storage.list_examples()[0]["summary"]["example"] is True
+    assert storage.list_scans() == []  # examples stay out of personal history
+    assert asyncio.run(examples.build()) == []  # idempotent

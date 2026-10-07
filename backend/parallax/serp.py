@@ -26,8 +26,9 @@ def _key(params: dict) -> str:
 
 
 class SerpGateway:
-    def __init__(self, api_key: str | None = None):
-        self.api_key = api_key or os.getenv("SERPAPI_API_KEY") or os.getenv("SERPAPI_KEY")
+    def __init__(self, api_key: str | None = None, offline: bool = False, latency: bool = True):
+        self.api_key = None if offline else api_key or os.getenv("SERPAPI_API_KEY") or os.getenv("SERPAPI_KEY")
+        self.latency = latency
         self.client = serpapi.Client(api_key=self.api_key, timeout=45) if self.api_key else None
         self.record = os.getenv("PARALLAX_RECORD") == "1"
         self.sem = asyncio.Semaphore(int(os.getenv("PARALLAX_CONCURRENCY", 6)))
@@ -71,10 +72,12 @@ class SerpGateway:
 
         recorded = self._read(FIXTURE_DIR / f"{key}.json", None)
         if recorded is not None:
-            await asyncio.sleep(0.15)
+            if self.latency:
+                await asyncio.sleep(0.15)
             return recorded, "recorded"
         # Simulated network latency so the streaming UI behaves like the real thing.
-        await asyncio.sleep(0.35 + (int(key[:4], 16) % 1400) / 1000)
+        if self.latency:
+            await asyncio.sleep(0.35 + (int(key[:4], 16) % 1400) / 1000)
         engine = params.get("engine")
         if engine == "google_trends":
             return demo.trends(params), "synthetic"

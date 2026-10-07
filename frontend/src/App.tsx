@@ -27,6 +27,9 @@ import ShareCard from "./components/ShareCard";
 import SetupGuide from "./components/SetupGuide";
 import ExportMenu from "./components/ExportMenu";
 import Help from "./components/Help";
+import AiDiff from "./components/AiDiff";
+import Concentration from "./components/Concentration";
+import CostReceipt from "./components/CostReceipt";
 
 const LENS_NAME: Record<string, string> = { cities: "Indian cities", languages: "Indian languages", world: "India vs world" };
 
@@ -247,7 +250,14 @@ export default function App() {
                 <div className="text-[13.5px] text-muted">
                   {LENS_NAME[state.lens] ?? state.lens} · {state.vantages.length} places · {state.live ? "live Google results" : "demo data"}
                   {state.savedAt && !scanning ? ` · ${timeAgo(state.savedAt)}` : ""}
-                  {state.done && state.done.credits > 0 ? ` · used ${state.done.credits} searches` : ""}
+                  {state.done && !scanning && (
+                    <>
+                      {" · "}
+                      <a href="#cost" className="underline decoration-rule-2 hover:decoration-ink">
+                        {state.reopened ? "0 credits (from history)" : state.done.synthetic ? "0 credits (demo)" : `${state.done.credits} credits used, ${state.done.cached} from cache`}
+                      </a>
+                    </>
+                  )}
                 </div>
                 <h1 className="mt-1 text-[clamp(32px,4.4vw,52px)] leading-[1.05]">“{state.query}”</h1>
               </div>
@@ -270,7 +280,20 @@ export default function App() {
                 />
               </div>
             )}
-            {!state.live && config && !config.live && (
+            {state.example && (
+              <div className="mt-4 flex flex-wrap items-center gap-3 rounded-md border border-rule bg-card px-4 py-3 text-[14px]">
+                <span>
+                  <b>Ready-made example.</b> It opened instantly and used no searches.
+                  {state.done?.synthetic ? " It uses demo sample data." : " It uses recorded Google results."}
+                </span>
+                {config?.live && (
+                  <button onClick={() => runScan({ query: state.query, lens: state.lens, vantageIds: [], custom: [], home: homeId, site })} className="btn btn-primary py-1.5">
+                    Run it live now
+                  </button>
+                )}
+              </div>
+            )}
+            {!state.live && !state.example && config && !config.live && (
               <p className="mt-4 text-[13.5px] text-gold">
                 These are demo results, not real Google data.{" "}
                 <button onClick={() => setSetup(true)} className="underline">How to switch to live data</button>
@@ -307,6 +330,9 @@ export default function App() {
               <>
                 <Section id="summary" kicker="The short answer" title={`Does where you search change what you see?`}>
                   <Summary a={a} lens={state.lens} vmap={vmap} brief={state.brief} streaming={state.status === "analyzing"} ai={!!config?.ai} changes={changes} prevWhen={prev ? timeAgo(prev.created_at) : null} />
+                  <div className="mt-10">
+                    <Concentration a={a} places={ids.length} />
+                  </div>
                 </Section>
 
                 <Section id="missing" kicker="Your blind spots" title="What you'd miss by searching from one place" intro="These are sources other places see on their first page of Google, but you don't. Change your place to see someone else's blind spots.">
@@ -325,7 +351,9 @@ export default function App() {
                   {diffPair && <SerpDiff ids={a.order} vmap={vmap} results={state.results} pair={diffPair} setPair={setPair} />}
                 </Section>
 
-                <Section id="ai" kicker="Google's AI Overview" title="Does Google's AI answer the same way everywhere?" intro="When Google shows an AI-written answer, it lists the sources it used. Each row is a place; filled squares are the websites its AI answer cited.">
+                <Section id="ai" kicker="Google's AI Overview" title="Does Google's AI answer the same way everywhere?" intro="Google now writes an AI answer above the results for many searches. Here are two places' answers side by side, with the words that differ highlighted, and below them the sources each place's AI relied on.">
+                  <AiDiff a={a} vmap={vmap} results={state.results} />
+                  <h3 className="mb-4 mt-14 text-[21px]">Which sources does the AI cite in each place?</h3>
                   <AiLens analysis={a} vmap={vmap} results={state.results} />
                 </Section>
 
@@ -402,6 +430,10 @@ export default function App() {
                     )}
                   </div>
                 </Section>
+
+                <section id="cost" className="border-t border-rule py-12">
+                  <CostReceipt state={state} creditsLeft={creditsLeft} live={!!config?.live} />
+                </section>
 
                 <section className="border-t border-rule py-12 text-[14px] leading-relaxed text-ink-2">
                   <div className="grid gap-8 md:grid-cols-3">

@@ -47,15 +47,34 @@ interface Props {
 export default function Landing({ config, creditsLeft, onScan, onOpen }: Props) {
   const [prefill, setPrefill] = useState<Partial<ScanOptions>>({});
   const [recent, setRecent] = useState<SavedScan[]>([]);
+  const [examples, setExamples] = useState<SavedScan[]>([]);
   const [lensId, setLensId] = useState("cities");
   const lens = config?.lenses.find((l) => l.id === lensId);
 
   useEffect(() => {
+    // Examples are built on first start; if they're still being built, look again shortly.
+    const loadExamples = (retry: number) =>
+      fetch("/api/examples")
+        .then((r) => r.json())
+        .then((rows: SavedScan[]) => {
+          if (rows.length) setExamples(rows);
+          else if (retry > 0) setTimeout(() => loadExamples(retry - 1), 1500);
+        })
+        .catch(() => {});
+    loadExamples(4);
     fetch("/api/scans?limit=6")
       .then((r) => r.json())
       .then(setRecent)
       .catch(() => {});
   }, []);
+
+  const featured = examples.length ? [...examples].sort((x, y) => (y.summary.score ?? 0) - (x.summary.score ?? 0))[0] : null;
+  const surprise = () => {
+    // Favour the most divided examples: pick randomly from the top half.
+    const ranked = [...examples].sort((x, y) => (y.summary.score ?? 0) - (x.summary.score ?? 0));
+    const pool = ranked.slice(0, Math.max(1, Math.ceil(ranked.length / 2)));
+    onOpen(pool[Math.floor(Math.random() * pool.length)].id);
+  };
 
   return (
     <div>
@@ -72,11 +91,40 @@ export default function Landing({ config, creditsLeft, onScan, onOpen }: Props) 
           <div className="mt-8">
             <ScanForm config={config} initial={prefill} creditsLeft={creditsLeft} onSubmit={onScan} onLensChange={setLensId} />
           </div>
+          {examples.length > 0 && (
+            <div className="mt-6 border-t border-rule pt-5">
+              <div className="flex flex-wrap items-center gap-3">
+                <button onClick={surprise} className="btn btn-ghost">
+                  <span aria-hidden>🎲</span> Surprise me
+                </button>
+                <span className="text-[14px] text-ink-2">or open a ready-made example (instant, no searches):</span>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {examples.map((e) => (
+                  <button key={e.id} onClick={() => onOpen(e.id)} className="chip hover:border-ink">
+                    {e.query}
+                    <span className="text-[12px] text-muted">{e.lens === "languages" ? "languages" : e.lens === "world" ? "world" : "cities"}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
         <figure className="relative">
           <div className="aspect-square w-full">
             {lens && <DotGlobe vantages={lens.vantages} focus={lensId === "world" ? "world" : "india"} interactive={false} />}
           </div>
+          {featured && (
+            <button onClick={() => onOpen(featured.id)} className="group mt-3 block w-full rounded-md border border-rule bg-card p-4 text-left transition hover:border-ink">
+              <div className="text-[12.5px] font-semibold text-accent">Most divided example{featured.summary.synthetic ? " · sample data" : ""}</div>
+              <div className="mt-1 font-serif text-[22px] font-semibold leading-tight">“{featured.query}”</div>
+              <div className="mt-1.5 text-[14px] text-ink-2">
+                <b className="num">{featured.summary.avg_differ}</b> of 10 top links differ between two places · {featured.summary.groups} groups
+                {featured.summary.top2_share != null && <> · 2 sites hold <b className="num">{Math.round(featured.summary.top2_share * 100)}%</b> of the top spots</>}
+              </div>
+              <div className="mt-2 text-[13.5px] underline decoration-rule-2 underline-offset-4 group-hover:decoration-ink">Open it →</div>
+            </button>
+          )}
           <figcaption className="mt-2 text-center text-[13px] text-muted">
             {lensId === "world" ? "The 10 places searched in “India vs world”" : lensId === "languages" ? "Each language is searched from a city where it's widely spoken" : "The 12 cities searched by default"}
           </figcaption>

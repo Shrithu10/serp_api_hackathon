@@ -70,6 +70,19 @@ async def locations(q: str = Query("", max_length=80)):
     return out
 
 
+@app.on_event("startup")
+async def _seed_examples():
+    # First run: build the ready-made examples (offline, free) in the background.
+    from .examples import build
+
+    asyncio.create_task(build())
+
+
+@app.get("/api/examples")
+async def examples():
+    return storage.list_examples()
+
+
 @app.get("/api/scans")
 async def scans(q: str = "", limit: int = Query(50, le=200)):
     return storage.list_scans(limit=limit, query=q or None)
@@ -172,6 +185,7 @@ async def scan(
                 yield sse("brief", {"delta": chunk})
         done = {
             "elapsed": round(time.perf_counter() - started, 2),
+            "requests": len(origins),
             "credits": origins.count("live"),
             "cached": origins.count("cache"),
             "synthetic": synthetic,

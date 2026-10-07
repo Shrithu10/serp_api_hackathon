@@ -121,6 +121,21 @@ export interface Analysis {
   };
   shared_links: number[][];
   shared_sources: number[][];
+  concentration: {
+    slots: number;
+    distinct: number;
+    top: { domain: string; count: number; share: number; category: string }[];
+    top2_share: number;
+    k_half: number;
+    hhi: number;
+    level: "concentrated" | "moderate" | "diverse";
+  };
+  ai_text: {
+    n: number;
+    avg_similarity: number;
+    most_different: { a: string; b: string; sim: number };
+    most_similar: { a: string; b: string; sim: number };
+  } | null;
 }
 
 export interface Trends {
@@ -133,6 +148,7 @@ export interface Trends {
 export interface Done {
   id?: string;
   elapsed: number;
+  requests?: number;
   credits: number;
   cached: number;
   synthetic: boolean;
@@ -166,6 +182,8 @@ export interface ScanState {
   startedAt: number;
   id: string | null;
   savedAt: number | null;
+  reopened: boolean;
+  example: boolean;
 }
 
 export interface ScanPayload {
@@ -187,6 +205,6 @@ export interface SavedScan {
   query: string;
   lens: string;
   live: boolean;
-  summary: { places: number; score: number; verdict: string; groups: number; avg_differ: number; top1: string; synthetic: boolean };
+  summary: { places: number; score: number; verdict: string; groups: number; avg_differ: number; top1: string; synthetic: boolean; example?: boolean; top2_share?: number };
   payload?: ScanPayload;
 }

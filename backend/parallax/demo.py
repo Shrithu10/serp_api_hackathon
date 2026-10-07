@@ -183,10 +183,30 @@ def google(params: dict) -> dict:
     if rng.random() < ai_prob:
         refs = rng.sample(organic[:7], k=min(4, len(organic)))
         extra = rng.choice([d for d, _ in _REGIONAL.get(city, [("wikipedia.org", 1)])])
+        Q = q[:1].upper() + q[1:]
+        # Sentence pool shared by all places; each place draws a different mix, so the
+        # sample answers overlap partly — like real localised AI Overviews do.
+        shared = rng.sample([
+            f"{Q} depends on several factors, and sources weigh them differently.",
+            f"Most guides agree on the basics of {q} but differ on what matters most.",
+            f"Experts quoted by {refs[0]['source']} describe {q} as widely discussed.",
+            f"Recent coverage of {q} focuses on cost, access and reliability.",
+            f"Popular discussions about {q} often cite personal experience over evidence.",
+            f"Official sources recommend checking the details before deciding on {q}.",
+        ], k=3)
+        local = [
+            f"In {city or 'this region'}, coverage from {extra} highlights the local angle.",
+            rng.choice([
+                f"Readers in {city or 'this region'} are pointed to {refs[-1]['source']} for specifics.",
+                f"Some regional reports from {extra} question the mainstream view.",
+                f"Local availability and prices around {city or 'here'} vary noticeably.",
+            ]),
+        ]
+        lines = shared[:2] + local + shared[2:]
         out["ai_overview"] = {
             "text_blocks": [
-                {"type": "paragraph", "snippet": f"[Sample AI Overview] {q[:1].upper() + q[1:]} is a topic with several dimensions. Seen from {city or 'here'}, Google summarises it through {refs[0]['source']} and {refs[-1]['source']}."},
-                {"type": "list", "list": [{"title": "Context:", "snippet": f"local coverage from {extra} shapes the framing."}, {"title": "Consensus:", "snippet": "most sources agree on the basics, disagree on emphasis."}]},
+                {"type": "paragraph", "snippet": "[Sample AI Overview] " + " ".join(lines[:2])},
+                {"type": "list", "list": [{"title": "", "snippet": t} for t in lines[2:]]},
             ],
             "references": [{"title": r["title"], "link": r["link"], "source": r["source"], "index": n} for n, r in enumerate(refs)] + [{"title": f"{q} - {extra}", "link": f"https://{extra}/{q.replace(' ', '-')}", "source": extra, "index": 9}],
         }

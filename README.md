@@ -58,6 +58,22 @@ Filter bubbles are usually discussed for social feeds. **Search is the bigger an
 
 **8. Deeper analysis (for researchers).** A similarity matrix, how each website's rank moves from place to place, the source mix (news / government / social / shops …), page features, unusually common words per place, and a Google Trends map of Indian states.
 
+### Four things worth showing a judge
+
+**Google's AI answer, compared word by word.** For many searches Google now writes an AI Overview above the results. Parallax puts two places' AI answers side by side and highlights the wording that appears in only one of them. By default it picks the two places whose answers differ most, and it reports how much wording all the AI answers share on average. It's careful about what this shows: different wording isn't automatically a different claim, so the highlights are there to be read, not counted as "bias".
+
+![AI answer diff](docs/ai-diff.jpg)
+
+**Who controls the top 3.** Every #1–#3 result across all places is counted, along with how many websites hold them. Example: *“Just 2 websites (wikipedia.org and youtube.com) hold 43% of all top-3 spots across 10 places. Half of those spots belong to 3 sites.”* The result is rated *concentrated*, *somewhat concentrated* or *spread out*, using top-2 share and the Herfindahl index.
+
+![Concentration](docs/concentration.jpg)
+
+**A cost & cache receipt.** Every result page ends with a receipt: requests by SerpApi engine (Search, AI Overview follow-ups, Trends), how many were fetched live and billed versus served from cache, credits used, credits saved, and credits left this month. For example: *“12 places searched. 10 served from cache, 2 fetched live. Saved 10 SerpApi credits.”* Reopened scans show 0 credits.
+
+<img src="docs/receipt.jpg" width="420" alt="Cost and cache receipt" />
+
+**Zero-friction start.** On first run Parallax builds six ready-made examples, so the start page shows the most divided one before you type anything. **🎲 Surprise me** opens one of the most divided examples instantly, at no cost. The examples are built from recorded SerpApi responses when you've recorded them (`python -m parallax.record "<query>"`, then `python -m parallax.examples`), and otherwise from labelled sample data.
+
 ### Built to be used, not just looked at
 
 - **History.** Every search is saved locally. Reopening one is instant and uses no SerpApi searches.

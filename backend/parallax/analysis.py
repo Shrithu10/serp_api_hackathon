@@ -107,6 +107,10 @@ know things using use guide official website site page read see tips ways way re
 _TOKEN = re.compile(r"[^\W\d_]{3,}", re.UNICODE)
 
 
+def _words(text: str) -> list[str]:
+    return [m.group(0).lower() for m in re.finditer(r"[^\W_]+", text, re.UNICODE) if len(m.group(0)) > 1]
+
+
 def _tokens(text: str) -> list[str]:
     return [t for t in (m.group(0).lower() for m in _TOKEN.finditer(text)) if t not in _STOP]
 
@@ -312,6 +316,47 @@ def analyze(query: str, vantages: list[dict], results: dict[str, dict]) -> dict:
         "local_count": sum(1 for i in ids if results[i].get("local")),
     }
 
+    # Concentration: who owns the top-3 slots across every place?
+    slots: Counter = Counter()
+    for i in ids:
+        for r in results[i]["organic"][:3]:
+            slots[r["domain"]] += 1
+    total_slots = sum(slots.values()) or 1
+    ranked_slots = slots.most_common()
+    cum, k_half = 0, 0
+    for _, c in ranked_slots:
+        cum += c
+        k_half += 1
+        if cum >= total_slots / 2:
+            break
+    top2_share = sum(c for _, c in ranked_slots[:2]) / total_slots
+    hhi = sum((c / total_slots) ** 2 for c in slots.values())
+    level = "concentrated" if top2_share >= 0.6 or hhi >= 0.25 else "moderate" if top2_share >= 0.4 or hhi >= 0.12 else "diverse"
+    concentration = {
+        "slots": total_slots,
+        "distinct": len(slots),
+        "top": [{"domain": d, "count": c, "share": round(c / total_slots, 3), "category": classify(d)} for d, c in ranked_slots[:6]],
+        "top2_share": round(top2_share, 3),
+        "k_half": k_half,
+        "hhi": round(hhi, 3),
+        "level": level,
+    }
+
+    # How differently is Google's AI answer worded from place to place?
+    ai_words = {i: set(_words((results[i].get("ai_overview") or {}).get("text") or "")) for i in ids}
+    ai_words = {i: w for i, w in ai_words.items() if len(w) >= 5}
+    ai_text = None
+    if len(ai_words) >= 2:
+        sims = {(a, b): len(ai_words[a] & ai_words[b]) / len(ai_words[a] | ai_words[b]) for a, b in combinations(ai_words, 2)}
+        lo = min(sims, key=sims.get)
+        hi = max(sims, key=sims.get)
+        ai_text = {
+            "n": len(ai_words),
+            "avg_similarity": round(mean(sims.values()), 3),
+            "most_different": {"a": lo[0], "b": lo[1], "sim": round(sims[lo], 3)},
+            "most_similar": {"a": hi[0], "b": hi[1], "sim": round(sims[hi], 3)},
+        }
+
     def name(i: str) -> str:
         return vmap[i]["label"]
 
@@ -328,6 +373,13 @@ def analyze(query: str, vantages: list[dict], results: dict[str, dict]) -> dict:
     ex_counts = sorted(((len(v), k) for k, v in exclusives.items()), reverse=True)
     if ex_counts and ex_counts[0][0]:
         facts.append(f"{name(ex_counts[0][1])} sees {ex_counts[0][0]} sources nobody else does.")
+    top_names = " and ".join(t["domain"] for t in concentration["top"][:2])
+    facts.append(f"{top_names} hold {round(top2_share * 100)}% of all top-3 spots across {n} places ({concentration['distinct']} different sites in total).")
+    if ai_text:
+        facts.append(
+            f"AI answers share on average {round(ai_text['avg_similarity'] * 100)}% of their wording; most different: "
+            f"{name(ai_text['most_different']['a'])} vs {name(ai_text['most_different']['b'])} ({round(ai_text['most_different']['sim'] * 100)}%)."
+        )
     ai_rate = sum(1 for i in ids if ai[i]["present"]) / n
     facts.append(f"AI Overview shown in {round(ai_rate * 100)}% of vantages" + (f"; cited-source overlap {round(ai_jaccard * 100)}%." if ai_jaccard is not None else "."))
 
@@ -365,6 +417,8 @@ def analyze(query: str, vantages: list[dict], results: dict[str, dict]) -> dict:
         "unique_domains": len(presence),
         "facts": facts,
         "plain": plain,
+        "concentration": concentration,
+        "ai_text": ai_text,
         "shared_links": [[count_of(shared_links, a, b) for b in order] for a in order],
         "shared_sources": [[count_of(shared_sources, a, b) for b in order] for a in order],
     }
