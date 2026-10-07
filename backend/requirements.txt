@@ -1,0 +1,7 @@
+fastapi>=0.115
+uvicorn[standard]>=0.30
+serpapi>=1.1
+anthropic>=1.0
+python-dotenv>=1.0
+mcp>=2.0
+pytest>=8.0
