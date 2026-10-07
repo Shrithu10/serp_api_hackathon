@@ -30,7 +30,7 @@ server = MCPServer(
 @server.tool(description="Search Google for `query` from many vantage points at once and measure how different the results are. lens: 'cities' (12 Indian cities), 'languages' (10 Indian languages), or 'world' (India vs 8 countries).")
 async def parallax_scan(query: str, lens: str = "cities") -> dict:
     vantages = (LENSES.get(lens) or LENSES["cities"]).vantages
-    results, a = await run_scan(query, vantages)
+    results, a, errors = await run_scan(query, vantages)
     if not a.get("ok"):
         return {"error": a.get("reason")}
     label = {v.id: v.label for v in vantages}
@@ -48,6 +48,7 @@ async def parallax_scan(query: str, lens: str = "cities") -> dict:
         "top3_concentration": {"level": a["concentration"]["level"], "top2_share": a["concentration"]["top2_share"], "top_sites": [t["domain"] for t in a["concentration"]["top"][:4]]},
         "ai_answer_wording_overlap": a["ai_text"]["avg_similarity"] if a["ai_text"] else None,
         "facts": a["facts"],
+        "failed": {label[i]: e for i, e in errors.items()},
     }
 
 

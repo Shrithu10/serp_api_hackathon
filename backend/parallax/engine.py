@@ -69,14 +69,16 @@ async def trends_for(q: str, gw: SerpGateway | None = None) -> dict:
 
 
 
-async def run_scan(q: str, vantages: list[Vantage], follow_ai: bool = True, gw: SerpGateway | None = None, wording: dict | None = None) -> tuple[dict[str, dict], dict]:
-    """Run a complete scan (no streaming). Returns (results, analysis)."""
+async def run_scan(q: str, vantages: list[Vantage], follow_ai: bool = True, gw: SerpGateway | None = None, wording: dict | None = None) -> tuple[dict[str, dict], dict, dict[str, str]]:
+    """Run a complete scan (no streaming). Returns (results, analysis, errors by vantage id).
+    A place that fails is reported in errors and the comparison uses the rest."""
     from .translations import resolve
 
     queries = resolve(q, vantages, wording)
     outs = await asyncio.gather(*(search_vantage(v, queries[v.id], follow_ai, gw) for v in vantages), return_exceptions=True)
     results = {v.id: r for v, r in zip(vantages, outs) if isinstance(r, dict)}
-    return results, analyze(q, [v.to_dict() for v in vantages], results)
+    errors = {v.id: redact(r)[:300] or type(r).__name__ for v, r in zip(vantages, outs) if not isinstance(r, dict)}
+    return results, analyze(q, [v.to_dict() for v in vantages], results), errors
 
 
 async def full_scan(q: str, lens: str, vantages: list[Vantage], wording: dict | None = None, gw: SerpGateway | None = None) -> dict:
@@ -85,7 +87,7 @@ async def full_scan(q: str, lens: str, vantages: list[Vantage], wording: dict | 
     from .translations import resolve
 
     t0 = time.perf_counter()
-    results, analysis = await run_scan(q, vantages, gw=gw, wording=wording)
+    results, analysis, errors = await run_scan(q, vantages, gw=gw, wording=wording)
     tr = await trends_for(q, gw=gw)
     origins = tr.pop("calls", []) + [c for r in results.values() for c in r["calls"]]
     vdicts = [v.to_dict() for v in vantages]
@@ -100,6 +102,6 @@ async def full_scan(q: str, lens: str, vantages: list[Vantage], wording: dict | 
     }
     return {
         "query": q, "lens": lens, "vantages": vdicts, "queries": resolve(q, vantages, wording), "results": results,
-        "errors": {v.id: "no results" for v in vantages if v.id not in results}, "analysis": analysis, "trends": tr,
+        "errors": errors, "analysis": analysis, "trends": tr,
         "brief": text, "done": done,
     }

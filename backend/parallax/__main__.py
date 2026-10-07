@@ -127,7 +127,10 @@ def main() -> None:
     ap.add_argument("--reload", action="store_true", help="auto-reload on code changes (development)")
     ap.add_argument("--quiet", action="store_true", help="skip the banner")
     ap.add_argument("--live", action="store_true", help="with `check`: also verify every place name with SerpApi's free Locations API")
-    args = ap.parse_args()
+    # `record` forwards its own flags (e.g. --lens) to parallax.record.
+    args, extra = ap.parse_known_args()
+    if extra and args.command != "record":
+        ap.error(f"unrecognized arguments: {' '.join(extra)}")
 
     if args.command == "mcp":
         # stdout carries the MCP protocol, so the banner goes to stderr.
@@ -141,7 +144,7 @@ def main() -> None:
         return
 
     if args.command == "record":
-        sys.argv = ["parallax.record", *args.rest]
+        sys.argv = ["parallax.record", *args.rest, *extra]
         from .record import main as record_main
 
         asyncio.run(record_main())

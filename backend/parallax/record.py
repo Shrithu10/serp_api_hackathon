@@ -25,9 +25,17 @@ async def main() -> None:
     args = ap.parse_args()
     if not gateway.live:
         raise SystemExit("Set SERPAPI_API_KEY to record real responses.")
-    _, a = await run_scan(args.query, LENSES[args.lens].vantages)
-    await trends_for(args.query)
+    vantages = LENSES[args.lens].vantages
+    _, a, errors = await run_scan(args.query, vantages)
+    tr = await trends_for(args.query)
+    for name in ("geo", "ts"):
+        if tr.get(f"{name}_error"):
+            print(f"Trends ({name}) not recorded: {tr[f'{name}_error']}")
     print(f"Recorded '{args.query}' ({args.lens}): PARALLAX {a.get('index')} — {a.get('verdict')}")
+    if errors:
+        failed = "; ".join(f"{v.label} ({errors[v.id]})" for v in vantages if v.id in errors)
+        # Places that answered are recorded; a re-run fetches only the rest (the others come from the cache).
+        raise SystemExit(f"Failed: {failed}. Run the same command again to fill them in.")
 
 
 if __name__ == "__main__":

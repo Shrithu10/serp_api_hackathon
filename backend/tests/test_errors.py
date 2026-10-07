@@ -59,3 +59,24 @@ def test_timeouts_are_retried_twice(monkeypatch):
     g.client = _Flaky(3)
     out = g._live_search({"q": "x"})
     assert g.client.calls == 3 and "did not respond" in out["error"] and "_transient" not in out
+
+
+def test_failed_place_is_reported_not_dropped():
+    import asyncio
+
+    from parallax.engine import run_scan
+    from parallax.serp import SerpError
+    from parallax.vantages import LENSES
+
+    vantages = LENSES["cities"].vantages
+    bad = vantages[0]
+
+    class Gw(SerpGateway):
+        async def search(self, params):
+            if params.get("location") == bad.location:
+                raise SerpError("SerpApi did not respond in time (TimeoutError)")
+            return await super().search(params)
+
+    results, analysis, errors = asyncio.run(run_scan("air pollution", vantages, gw=Gw(offline=True, latency=False)))
+    assert errors == {bad.id: "SerpApi did not respond in time (TimeoutError)"}
+    assert len(results) == len(vantages) - 1 and analysis.get("ok")
