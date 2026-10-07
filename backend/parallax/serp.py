@@ -19,6 +19,12 @@ ROOT = Path(__file__).resolve().parent.parent
 CACHE_DIR = Path(os.getenv("PARALLAX_CACHE_DIR", ROOT / ".cache"))
 FIXTURE_DIR = ROOT / "fixtures"
 CACHE_TTL = int(os.getenv("PARALLAX_CACHE_TTL", 6 * 3600))
+# Location-targeted, non-English searches can take SerpApi well over a minute. Giving up early
+# wastes the search (it may still finish, and be billed, on SerpApi's side), so wait long.
+TIMEOUT = int(os.getenv("PARALLAX_TIMEOUT", 120))
+# SerpApi reuses identical searches for about an hour at no charge, so a retry of a search that
+# finished on its side costs nothing extra.
+RETRIES = 2
 
 
 def redact(text: object) -> str:
@@ -40,7 +46,7 @@ class SerpGateway:
         # SERPAPI_KEY_VIA_PROXY=1: the key is attached outside the app (e.g. an egress proxy adding an
         # Authorization header for serpapi.com), so requests are sent without one and still count as live.
         self.via_proxy = not offline and os.getenv("SERPAPI_KEY_VIA_PROXY") == "1"
-        self.client = serpapi.Client(api_key=self.api_key, timeout=45) if (self.api_key or self.via_proxy) else None
+        self.client = serpapi.Client(api_key=self.api_key, timeout=TIMEOUT) if (self.api_key or self.via_proxy) else None
         self.record = os.getenv("PARALLAX_RECORD") == "1"
         self.sem = asyncio.Semaphore(int(os.getenv("PARALLAX_CONCURRENCY", 6)))
         CACHE_DIR.mkdir(parents=True, exist_ok=True)
@@ -71,6 +77,8 @@ class SerpGateway:
         if self.live:
             cached = self._read(CACHE_DIR / f"{key}.json", CACHE_TTL)
             if cached is not None:
+                if self.record:
+                    self._write(FIXTURE_DIR / f"{key}.json", cached)
                 return cached, "cache"
             async with self.sem:
                 data = await asyncio.to_thread(self._live_search, params)
@@ -96,10 +104,26 @@ class SerpGateway:
             return {"ai_overview": {"error": "demo"}}, "synthetic"
         return demo.google(params, self.salt), "synthetic"
 
-    def _live_search(self, params: dict) -> dict:
+    def _live_search(self, params: dict, retries: int = RETRIES) -> dict:
+        for attempt in range(retries + 1):
+            data = self._live_search_once(params)
+            # "We couldn't get valid results for this search. Please try again later." is transient too.
+            if not (data.get("_transient") or "try again" in str(data.get("error", "")).lower()):
+                return data
+            if attempt < retries:
+                time.sleep(2 * (attempt + 1))
+        return {"error": data["error"]}
+
+    def _live_search_once(self, params: dict) -> dict:
+        """One SerpApi call. Errors worth retrying are marked _transient."""
         try:
             return self.client.search(dict(params)).as_dict()
-        except serpapi.HTTPError as e:  # SerpApi returns JSON error bodies
+        except (serpapi.TimeoutError, serpapi.HTTPConnectionError) as e:
+            return {"error": f"SerpApi did not respond in time ({type(e).__name__})", "_transient": True}
+        except serpapi.HTTPError as e:
+            if getattr(e, "status_code", 0) in (429, 500, 502, 503, 504):
+                return {"error": e.error or f"SerpApi is busy (HTTP {e.status_code})", "_transient": True}
+            # Otherwise SerpApi's JSON error body says what went wrong.
             # A 4xx/5xx Response is falsy, so test for None; never fall back to str(e),
             # which embeds the request URL (and with it the api_key).
             if getattr(e, "error", None):
