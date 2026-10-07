@@ -34,7 +34,7 @@ Filter bubbles are usually discussed for social feeds. **Search is the bigger an
 ## What you get from one search
 
 **1. The short answer.** One sentence in plain English, followed by four numbers anyone can read:
-*“6.2 of 10 top links differ between any two places”*, *“7 of 12 places show the same #1 result”*, *“6 groups of places see similar pages”*, *“5 of 12 places got Google's AI answer”*. Every number has a **?** that explains it. A short written summary, generated directly from the numbers, ends with a concrete *What to do*.
+*“3.8 of 5 top links differ between any two places”*, *“7 of 12 places show the same #1 result”*, *“3 groups of places see similar pages”*, *“12 of 12 places got Google's AI answer”*. Every number has a **?** that explains it. A short written summary, generated directly from the numbers, ends with a concrete *What to do*.
 
 ![Short answer](docs/short-answer.jpg)
 
@@ -64,7 +64,7 @@ Filter bubbles are usually discussed for social feeds. **Search is the bigger an
 
 ![AI answer diff](docs/ai-diff.jpg)
 
-**Who controls the top 3.** Every #1–#3 result across all places is counted, along with how many websites hold them. Example: *“Just 2 websites (wikipedia.org and youtube.com) hold 43% of all top-3 spots across 10 places. Half of those spots belong to 3 sites.”* The result is rated *concentrated*, *somewhat concentrated* or *spread out*, using top-2 share and the Herfindahl index.
+**Who controls the top 3.** Every #1–#3 result across all places is counted, along with how many websites hold them. Example (real results for “air pollution”): *“Just 2 websites (nasa.gov and youtube.com) hold 36% of all top-3 spots across 12 places. Half of those spots belong to 3 sites.”* The result is rated *concentrated*, *somewhat concentrated* or *spread out*, using top-2 share and the Herfindahl index.
 
 ![Concentration](docs/concentration.jpg)
 
@@ -72,9 +72,9 @@ Filter bubbles are usually discussed for social feeds. **Search is the bigger an
 
 <img src="docs/receipt.jpg" width="420" alt="Cost and cache receipt" />
 
-**One-click sharing.** Under the AI answer diff and the top-3 finding there's a *Share this finding* row: post to X, share on LinkedIn, copy, or use the phone's share sheet. The text is written for you, for example *“Just 2 websites (wikipedia.org and youtube.com) hold 43% of Google's top-3 spots for ‘air pollution’ across 12 places. Explored with Parallax + @SerpApi #BuiltWithSerpApi”*. Findings from demo data are tagged “[sample data]” so made-up numbers never travel as real ones.
+**One-click sharing.** Under the AI answer diff and the top-3 finding there's a *Share this finding* row: post to X, share on LinkedIn, copy, or use the phone's share sheet. The text is written for you, for example *“Just 2 websites (nasa.gov and youtube.com) hold 36% of Google's top-3 spots for ‘air pollution’ across 12 places. Explored with Parallax + @SerpApi #BuiltWithSerpApi”*. Findings from demo data are tagged “[sample data]” so made-up numbers never travel as real ones.
 
-**Zero-friction start.** On first run Parallax builds six ready-made examples, so the start page shows the most divided one before you type anything. **🎲 Surprise me** opens one of the most divided examples instantly, at no cost. The examples are built from recorded SerpApi responses when you've recorded them (`python -m parallax.record "<query>"`, then `python -m parallax.examples`), and otherwise from labelled sample data.
+**Zero-friction start.** On first run Parallax builds six ready-made examples, so the start page shows the most divided one before you type anything. **🎲 Surprise me** opens one of the most divided examples instantly, at no cost. The examples are built from recorded SerpApi responses when you've recorded them (`python -m parallax record "<query>" --lens <lens>`, then `python -m parallax examples`), and otherwise from labelled sample data. Four of the six ship with real recorded Google results (one per lens, plus “air pollution”).
 
 ### Track a search over time
 
@@ -103,7 +103,7 @@ Runs happen while Parallax is running, and a missed run happens on the next star
 |---|---|---|---|
 | ![](docs/searching.jpg) | ![](docs/history.jpg) | ![](docs/share-card.jpg) | ![](docs/mobile.jpg) |
 
-<sub>Screenshots were taken in offline demo mode (synthetic sample data). With a SerpApi key every number comes from live Google results.</sub>
+<sub>Screenshots show real Google results fetched through SerpApi in October 2026 (“air pollution” across 12 cities, and “is india safe for tourists” from 10 countries for the AI answer diff). The Tracking screenshot uses the built-in sample history, since real tracking needs several days of runs.</sub>
 
 ### Three ways to compare
 
@@ -229,11 +229,12 @@ Every line is a real startup check: missing keys show as warnings, and broken se
 | `SERPAPI_API_KEY` | for live data | Free key at [serpapi.com](https://serpapi.com/users/sign_up), 250 searches/month |
 | `PARALLAX_CACHE_TTL` | optional | Seconds to reuse a cached SerpApi response (default 21600) |
 | `PARALLAX_RECORD` | optional | `1` = also save responses to `backend/fixtures/` for offline demos |
+| `PARALLAX_TIMEOUT` | optional | Seconds to wait for one SerpApi response (default 120). Slow or failed calls are retried up to twice; a place that still fails is shown as failed and the comparison uses the rest |
 
 **No key? It still runs.** Without `SERPAPI_API_KEY`, PARALLAX switches to **demo mode** with clearly labelled synthetic sample data, so you can explore the whole interface. To demo on *real* data offline, record a scan once:
 
 ```bash
-cd backend && ../.venv/bin/python -m parallax.record "is ayurveda effective" --lens cities
+cd backend && ../.venv/bin/python -m parallax record "is ayurveda effective" --lens languages
 ```
 
 Recorded fixtures are then replayed whenever the key is absent.
