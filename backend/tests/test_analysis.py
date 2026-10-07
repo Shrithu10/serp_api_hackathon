@@ -68,14 +68,14 @@ def test_identical_results_score_zero():
 
 
 def test_offline_brief_streams():
-    from parallax.brief import _offline
+    from parallax.brief import stream_brief
 
     q = "upi"
     results = {v.id: normalize(demo.google(v.params(q))) for v in CITIES}
     a = analyze(q, [v.to_dict() for v in CITIES], results)
 
     async def collect():
-        return "".join([c async for c in _offline(a, [v.to_dict() for v in CITIES])])
+        return "".join([c async for c in stream_brief(q, [v.to_dict() for v in CITIES], results, a, True)])
 
     text = asyncio.run(collect())
     assert "What to do" in text and "**" in text

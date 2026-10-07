@@ -9,11 +9,13 @@ from typing import AsyncIterator
 
 
 async def stream_brief(query: str, vantages: list[dict], results: dict[str, dict], analysis: dict, synthetic: bool) -> AsyncIterator[str]:
-    async for chunk in _offline(analysis, vantages):
-        yield chunk
+    for word in re.split(r"(\s+)", brief_text(analysis, vantages)):
+        yield word
+        await asyncio.sleep(0.006)
 
 
-async def _offline(analysis: dict, vantages: list[dict]) -> AsyncIterator[str]:
+def brief_text(analysis: dict, vantages: list[dict]) -> str:
+    """The plain-language summary, generated from the numbers."""
     vmap = {v["id"]: v for v in vantages}
     name = lambda i: vmap[i]["label"]  # noqa: E731
     p = analysis.get("plain") or {}
@@ -35,7 +37,4 @@ async def _offline(analysis: dict, vantages: list[dict]) -> AsyncIterator[str]:
     best = max(analysis["exclusives"].items(), key=lambda kv: len(kv[1]))
     if best[1]:
         text.append(f"\nWhat to do: read beyond your own results. For example, only {name(best[0])} sees {', '.join(e['domain'] for e in best[1][:3])}.")
-    for part in text:
-        for word in re.split(r"(\s+)", part):
-            yield word
-            await asyncio.sleep(0.006)
+    return "".join(text)

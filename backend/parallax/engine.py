@@ -83,7 +83,7 @@ async def run_scan(q: str, vantages: list[Vantage], follow_ai: bool = True, gw: 
 
 async def full_scan(q: str, lens: str, vantages: list[Vantage], wording: dict | None = None, gw: SerpGateway | None = None) -> dict:
     """A complete, save-ready scan: results, analysis, trends, summary and cost accounting."""
-    from .brief import stream_brief
+    from .brief import brief_text
     from .translations import resolve
 
     t0 = time.perf_counter()
@@ -91,7 +91,7 @@ async def full_scan(q: str, lens: str, vantages: list[Vantage], wording: dict | 
     tr = await trends_for(q, gw=gw)
     origins = tr.pop("calls", []) + [c for r in results.values() for c in r["calls"]]
     vdicts = [v.to_dict() for v in vantages]
-    text = "".join([c async for c in stream_brief(q, vdicts, results, analysis, "synthetic" in origins)]) if analysis.get("ok") else ""
+    text = brief_text(analysis, vdicts) if analysis.get("ok") else ""
     done = {
         "elapsed": round(time.perf_counter() - t0, 2),
         "requests": len(origins),

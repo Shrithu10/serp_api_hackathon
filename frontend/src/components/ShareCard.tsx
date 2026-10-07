@@ -43,7 +43,7 @@ export default function ShareCard({ analysis, lens, vmap, onClose }: { analysis:
               <div className="mt-6 font-serif text-[28px] leading-snug">{headline(analysis, lens).text}</div>
               <div className="mt-auto grid grid-cols-3 gap-6 border-t border-rule pt-6">
                 <div>
-                  <div className="font-serif text-[48px] font-semibold leading-none">{p.avg_differ}<span className="text-[24px] font-normal text-muted">/{p.avg_len}</span></div>
+                  <div className="font-serif text-[48px] font-semibold leading-none">{p.avg_differ}<span className="text-[24px] font-normal text-muted">/{Math.round(p.avg_len)}</span></div>
                   <div className="mt-2 text-[14px] text-ink-2">top links differ between two places</div>
                 </div>
                 <div>

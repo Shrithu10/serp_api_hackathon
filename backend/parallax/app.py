@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import re
 import time
 from pathlib import Path
 
@@ -238,17 +239,21 @@ async def scan(
     except (ValueError, AttributeError):
         overrides = {}
 
+    # Shared with guarded(), which saves the scan if the client disconnects.
+    results: dict[str, dict] = {}
+    errors: dict[str, str] = {}
+    queries: dict[str, str] = {}
+    saved: list[bool] = []
+
     async def stream():
         started = time.perf_counter()
         vdicts = [v.to_dict() for v in chosen]
         yield sse("plan", {"query": q, "lens": lens, "vantages": vdicts, "live": gateway.live})
 
-        queries = translations.resolve(q, chosen, overrides)
+        queries.update(translations.resolve(q, chosen, overrides))
         if any(v.translate for v in chosen):
             yield sse("translations", {"queries": queries, "translated": any(queries[v.id] != q for v in chosen)})
 
-        results: dict[str, dict] = {}
-        errors: dict[str, str] = {}
         origins: list[str] = []
 
         async def run(v: Vantage):
@@ -280,11 +285,7 @@ async def scan(
             yield sse("trends", tr)
 
         synthetic = "synthetic" in origins
-        text = ""
-        if analysis.get("ok"):
-            async for chunk in brief.stream_brief(q, vdicts, results, analysis, synthetic):
-                text += chunk
-                yield sse("brief", {"delta": chunk})
+        text = brief.brief_text(analysis, vdicts) if analysis.get("ok") else ""
         done = {
             "elapsed": round(time.perf_counter() - started, 2),
             "requests": len(origins),
@@ -293,17 +294,41 @@ async def scan(
             "synthetic": synthetic,
             "recorded": origins.count("recorded"),
         }
-        if results:
-            try:
-                done["id"] = storage.save(q, lens, gateway.live, {
-                    "query": q, "lens": lens, "vantages": vdicts, "queries": queries, "results": results,
-                    "errors": errors, "analysis": analysis, "trends": tr, "brief": text, "done": done,
-                })
-            except Exception:  # history is a convenience; never fail a scan over it
-                pass
+        # Save before streaming the summary, so closing the tab now doesn't lose a paid-for scan.
+        persist(analysis, tr, text, done)
+        for word in re.split(r"(\s+)", text):
+            yield sse("brief", {"delta": word})
+            await asyncio.sleep(0.006)
         yield sse("done", done)
 
-    return StreamingResponse(stream(), media_type="text/event-stream", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+    def persist(analysis: dict, tr: dict | None, text: str, done: dict) -> None:
+        if not results or saved:
+            return
+        saved.append(True)
+        try:
+            done["id"] = storage.save(q, lens, gateway.live, {
+                "query": q, "lens": lens, "vantages": [v.to_dict() for v in chosen], "queries": queries, "results": results,
+                "errors": errors, "analysis": analysis, "trends": tr, "brief": text, "done": done,
+            })
+        except Exception:  # history is a convenience; never fail a scan over it
+            pass
+
+    async def guarded():
+        try:
+            async for event in stream():
+                yield event
+        finally:
+            # Client left after every place answered but before the save above: keep the scan.
+            # Places still in flight are not saved; their responses are in the disk cache, so a re-run is free.
+            if results and not saved and len(results) + len(errors) == len(chosen):
+                a = analyze(q, [v.to_dict() for v in chosen], results)
+                origins_ = [c for r in results.values() for c in r["calls"]]
+                persist(a, None, brief.brief_text(a, [v.to_dict() for v in chosen]) if a.get("ok") else "", {
+                    "elapsed": 0, "requests": len(origins_), "credits": origins_.count("live"), "cached": origins_.count("cache"),
+                    "synthetic": "synthetic" in origins_, "recorded": origins_.count("recorded"),
+                })
+
+    return StreamingResponse(guarded(), media_type="text/event-stream", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 
 # Serve the built frontend when present (single-process deployment).
