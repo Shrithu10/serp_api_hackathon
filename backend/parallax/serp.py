@@ -101,7 +101,9 @@ class SerpGateway:
         if engine == "google_trends":
             return demo.trends(params, self.salt), "synthetic"
         if engine == "google_ai_overview":
-            return {"ai_overview": {"error": "demo"}}, "synthetic"
+            # Only recorded (real) results carry a page_token. No fixture means the follow-up
+            # returned nothing when recorded, so there is no AI Overview, not demo data.
+            raise SerpError("AI Overview follow-up not recorded")
         return demo.google(params, self.salt), "synthetic"
 
     def _live_search(self, params: dict, retries: int = RETRIES) -> dict:
