@@ -31,7 +31,10 @@ class SerpGateway:
         self.salt = salt
         self.api_key = None if offline else api_key or os.getenv("SERPAPI_API_KEY") or os.getenv("SERPAPI_KEY")
         self.latency = latency
-        self.client = serpapi.Client(api_key=self.api_key, timeout=45) if self.api_key else None
+        # SERPAPI_KEY_VIA_PROXY=1: the key is attached outside the app (e.g. an egress proxy adding an
+        # Authorization header for serpapi.com), so requests are sent without one and still count as live.
+        self.via_proxy = not offline and os.getenv("SERPAPI_KEY_VIA_PROXY") == "1"
+        self.client = serpapi.Client(api_key=self.api_key, timeout=45) if (self.api_key or self.via_proxy) else None
         self.record = os.getenv("PARALLAX_RECORD") == "1"
         self.sem = asyncio.Semaphore(int(os.getenv("PARALLAX_CONCURRENCY", 6)))
         CACHE_DIR.mkdir(parents=True, exist_ok=True)
