@@ -23,7 +23,7 @@ const ALIAS: Record<string, string[]> = {
   pondicherry: ["py"],
 };
 
-const heat = d3.scaleSequential((t) => d3.interpolateRgbBasis(["#141826", "#3b2266", "#9b3fbf", "#ff4d6d", "#ffb547"])(t)).domain([0, 100]);
+const heat = d3.scaleSequential((t) => d3.interpolateRgbBasis(["#efe8da", "#ecc9a2", "#df8f5c", "#c8442a", "#7a2213"])(t)).domain([0, 100]);
 
 function Timeline({ data }: { data: Trends["timeline"] }) {
   const [ref, { width }] = useSize<HTMLDivElement>();
@@ -39,17 +39,17 @@ function Timeline({ data }: { data: Trends["timeline"] }) {
       <svg width={W} height={H} className="block overflow-visible">
         <defs>
           <linearGradient id="tl" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0" stopColor="#ff4d6d" stopOpacity="0.45" />
-            <stop offset="1" stopColor="#ff4d6d" stopOpacity="0" />
+            <stop offset="0" stopColor="#c8442a" stopOpacity="0.25" />
+            <stop offset="1" stopColor="#c8442a" stopOpacity="0" />
           </linearGradient>
         </defs>
         <path d={area(data) || ""} fill="url(#tl)" />
-        <path d={line(data) || ""} fill="none" stroke="#ff8a5b" strokeWidth={1.8} />
+        <path d={line(data) || ""} fill="none" stroke="#c8442a" strokeWidth={1.8} />
         {data.length > 0 && (
           <g>
-            <circle cx={x(peak)} cy={y(data[peak].v)} r={4} fill="#ffb547" />
-            <text x={Math.min(W - 120, x(peak) + 8)} y={y(data[peak].v) + 4} fontSize={11} fill="#ffb547" className="font-mono">
-              peak · {data[peak].date}
+            <circle cx={x(peak)} cy={y(data[peak].v)} r={4} fill="#b9861b" />
+            <text x={Math.min(W - 120, x(peak) + 8)} y={y(data[peak].v) + 4} fontSize={11} fill="#8a5a2b">
+              highest: {data[peak].date}
             </text>
           </g>
         )}
@@ -75,7 +75,7 @@ export default function IndiaHeat({ trends, vantages }: { trends: Trends; vantag
   const h = hover ? india.locations.find((l) => l.id === hover) : null;
 
   if (!trends.regions.length && !trends.timeline.length)
-    return <div className="text-sm text-dim">Google Trends has no regional data for this query{trends.geo_error ? ` (${trends.geo_error})` : ""}.</div>;
+    return <div className="text-sm text-faint">Google Trends has no regional data for this query{trends.geo_error ? ` (${trends.geo_error})` : ""}.</div>;
 
   return (
     <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
@@ -88,8 +88,8 @@ export default function IndiaHeat({ trends, vantages }: { trends: Trends; vantag
               <path
                 key={l.id}
                 d={l.path}
-                fill={d ? heat(d.value) : "#10131b"}
-                stroke={hover === l.id ? "#fff" : isV ? "rgba(94,242,255,0.8)" : "rgba(6,7,10,0.9)"}
+                fill={d ? heat(d.value) : "#e6dfd0"}
+                stroke={hover === l.id || isV ? "#1a1814" : "#fbf9f4"}
                 strokeWidth={hover === l.id ? 1.6 : isV ? 1.1 : 0.6}
                 onMouseEnter={() => setHover(l.id)}
                 onMouseLeave={() => setHover(null)}
@@ -98,33 +98,33 @@ export default function IndiaHeat({ trends, vantages }: { trends: Trends; vantag
             );
           })}
         </svg>
-        <div className="pointer-events-none absolute left-2 top-2 rounded-xl border border-line bg-ink/80 px-3 py-2 backdrop-blur">
+        <div className="pointer-events-none absolute left-2 top-2 rounded-xl border border-rule bg-card/90 px-3 py-2 backdrop-blur">
           <div className="text-[13px]">{h ? h.name : "Hover a state"}</div>
-          <div className="font-mono text-2xl text-amber">{h ? byId[h.id]?.value ?? "—" : "·"}</div>
+          <div className="num text-2xl text-accent">{h ? byId[h.id]?.value ?? "—" : "·"}</div>
         </div>
-        <div className="mt-2 flex items-center gap-2 font-mono text-[10px] text-dim">
+        <div className="mt-2 flex items-center gap-2 text-[12px] text-muted">
           0
           <div className="h-2 flex-1 rounded-full" style={{ background: `linear-gradient(90deg, ${[0, 25, 50, 75, 100].map((v) => heat(v)).join(",")})` }} />
-          100 · relative search interest
+          100 = most searched
         </div>
       </div>
       <div>
-        <div className="eyebrow mb-3">Where India searches for it most</div>
+        <div className="label mb-3">States searching for it most</div>
         <div className="space-y-1.5">
           {ranked.slice(0, 10).map((r, i) => (
             <div key={r.code || r.name} className="flex items-center gap-3 text-[13px]">
-              <span className="w-5 font-mono text-[11px] text-dim">{i + 1}</span>
+              <span className="num w-5 text-[12px] text-muted">{i + 1}</span>
               <span className="w-40 truncate">{r.name}</span>
-              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/5">
+              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-paper-2">
                 <div className="h-full rounded-full" style={{ width: `${r.value}%`, background: heat(r.value) }} />
               </div>
-              <span className="w-8 text-right font-mono text-[11px] text-muted">{r.value}</span>
+              <span className="num w-8 text-right text-[12px] text-muted">{r.value}</span>
             </div>
           ))}
         </div>
         {trends.timeline.length > 0 && (
           <div className="mt-8">
-            <div className="eyebrow mb-2">Interest over the last 12 months · India</div>
+            <div className="label mb-2">Interest in India over the past 12 months</div>
             <Timeline data={trends.timeline} />
           </div>
         )}

@@ -17,18 +17,19 @@ except ImportError:  # pragma: no cover
 
 MODEL = os.getenv("PARALLAX_MODEL", "claude-opus-5-5")
 
-SYSTEM = """You are PARALLAX, an analyst who studies how Google search results differ by place and language.
-You receive computed divergence metrics plus the top results each vantage point saw for one query.
-Write a sharp field report for a curious, non-technical reader.
+SYSTEM = """You help ordinary people understand how Google search results change depending on where (and in which
+language) you search. You receive computed comparison numbers plus the top results each place saw for one query.
 
-Format (Markdown, max ~220 words):
-- First line: a one-sentence headline in bold that states the single most striking finding.
-- Then 3-4 bullets. Each bullet names specific places and specific sources, and says why it matters
-  (whose voices are amplified, what a person in that place would come away believing, what is missing).
-- End with one line starting "Blind spot:" naming something only one vantage gets to see.
+Write for a curious non-expert. Plain words only: say "places", "links", "sources", never "vantage", "RBO" or "cluster".
+Format (Markdown, max ~180 words):
+- First line: one bold sentence that directly answers "Does where you search change what you see for this query?"
+- Then 3 bullets. Each names specific places and specific websites, and says why it matters to a reader
+  (which voices get amplified, what someone there would come away believing, what is missing).
+- Last line starts with "What to do:" and gives one concrete, practical tip (for example, which sources from
+  other places are worth reading, or which place's results look most different and why).
 
-Be concrete and evidence-based: only claim what the data shows. No preamble, no hedging boilerplate.
-If results came from demo/synthetic data, still analyse them, but do not invent real-world events."""
+Only claim what the data shows. No preamble.
+If results came from demo/synthetic data, still describe them, but do not invent real-world events."""
 
 
 def available() -> bool:
@@ -105,23 +106,29 @@ async def stream_brief(query: str, vantages: list[dict], results: dict[str, dict
 async def _offline(analysis: dict, vantages: list[dict]) -> AsyncIterator[str]:
     vmap = {v["id"]: v for v in vantages}
     name = lambda i: vmap[i]["label"]  # noqa: E731
+    p = analysis.get("plain") or {}
     ms, md = analysis["most_similar"], analysis["most_different"]
-    clusters = analysis["clusters"]
-    text = [f"**{analysis['verdict']}: this query splits into {len(clusters)} result-realities (PARALLAX {analysis['index']}/100).**\n\n"]
-    text.append(f"- **{name(md['a'])} and {name(md['b'])}** are furthest apart, sharing only {round(md['sim'] * 100)}% of their ranked results, while **{name(ms['a'])} and {name(ms['b'])}** are near-twins at {round(ms['sim'] * 100)}%.\n")
-    text.append(f"- **{name(analysis['outlier'])}** is the odd one out; **{name(analysis['anchor'])}** sees the most 'typical' page.\n")
+    groups = len(analysis["clusters"])
+    differ, length = p.get("avg_differ", 0), p.get("avg_len", 10)
+    if differ <= 2:
+        head = "Mostly no: people in different places see nearly the same results for this."
+    elif differ <= 5:
+        head = f"Somewhat: on average {differ:g} of the top {length:g} links change from one place to another."
+    else:
+        head = f"Yes, a lot: on average {differ:g} of the top {length:g} links change from one place to another."
+    text = [f"**{head}**\n\n"]
+    text.append(f"- **{name(md['a'])}** and **{name(md['b'])}** see the most different pages; **{name(ms['a'])}** and **{name(ms['b'])}** see almost the same one.\n")
+    if p.get("top1_domain"):
+        text.append(f"- The #1 result is **{p['top1_domain']}** in {p.get('top1_agree')} of {p.get('places')} places, and the places fall into {groups} groups that see similar results.\n")
     if analysis["consensus"]:
-        text.append(f"- The shared core everyone gets: {', '.join(c['domain'] for c in analysis['consensus'][:4])}.\n")
-    if analysis["ai_rate"]:
-        ov = analysis["ai_ref_overlap"]
-        text.append(f"- Google's AI Overview appeared in {round(analysis['ai_rate'] * 100)}% of vantages" + (f", and its cited sources overlap only {round(ov * 100)}% between places.\n" if ov is not None else ".\n"))
+        text.append(f"- Almost everyone sees {', '.join(c['domain'] for c in analysis['consensus'][:3])}. Google's AI answer appeared in {p.get('ai_count', 0)} of {p.get('places')} places.\n")
     best = max(analysis["exclusives"].items(), key=lambda kv: len(kv[1]))
     if best[1]:
-        text.append(f"\nBlind spot: only {name(best[0])} sees {', '.join(e['domain'] for e in best[1][:3])}.")
+        text.append(f"\nWhat to do: read beyond your own results. For example, only {name(best[0])} sees {', '.join(e['domain'] for e in best[1][:3])}.")
     for part in text:
         for word in re.split(r"(\s+)", part):
             yield word
-            await asyncio.sleep(0.008)
+            await asyncio.sleep(0.006)
 
 
 async def translate(query: str, langs: dict[str, str]) -> dict[str, str]:

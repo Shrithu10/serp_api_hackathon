@@ -1,307 +1,456 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
-import type { Config, Vantage } from "./lib/types";
+import { AnimatePresence } from "motion/react";
+import type { Config, SavedScan, ScanPayload } from "./lib/types";
 import { useScan } from "./lib/scan";
-import Hero from "./components/Hero";
-import DotGlobe from "./components/DotGlobe";
-import IndexGauge from "./components/IndexGauge";
-import LiveFeed from "./components/LiveFeed";
+import { readRoute, writeRoute, type Route } from "./lib/url";
+import { changesSince, download, slug, timeAgo, toCSV, toMarkdown } from "./lib/derive";
+import { groupColor } from "./lib/palette";
+import Header from "./components/Header";
+import Landing from "./components/Landing";
+import History from "./components/History";
+import ScanForm, { type ScanOptions } from "./components/ScanForm";
+import Progress from "./components/Progress";
 import Section from "./components/Section";
-import Realities from "./components/Realities";
-import Brief from "./components/Brief";
-import Matrix from "./components/Matrix";
-import AiLens from "./components/AiLens";
-import Rivers from "./components/Rivers";
+import Summary from "./components/Summary";
+import BlindSpots from "./components/BlindSpots";
+import SiteReport from "./components/SiteReport";
+import ByPlace from "./components/ByPlace";
 import SerpDiff from "./components/SerpDiff";
-import Exclusives from "./components/Exclusives";
+import AiLens from "./components/AiLens";
+import DotGlobe from "./components/DotGlobe";
+import Inspector from "./components/Inspector";
+import Matrix from "./components/Matrix";
+import Rivers from "./components/Rivers";
 import Anatomy from "./components/Anatomy";
 import IndiaHeat from "./components/IndiaHeat";
 import ShareCard from "./components/ShareCard";
-import Inspector from "./components/Inspector";
+import SetupGuide from "./components/SetupGuide";
+import ExportMenu from "./components/ExportMenu";
+import Help from "./components/Help";
 
-interface Account {
-  demo?: boolean;
-  plan_searches_left?: number | null;
-  total_searches_left?: number | null;
-}
+const LENS_NAME: Record<string, string> = { cities: "Indian cities", languages: "Indian languages", world: "India vs world" };
 
-function Logo({ onClick }: { onClick?: () => void }) {
-  return (
-    <button onClick={onClick} className="flex items-center gap-2.5">
-      <svg width="26" height="26" viewBox="0 0 64 64">
-        <circle cx="26" cy="32" r="15" fill="none" stroke="#ff4d6d" strokeWidth="5" />
-        <circle cx="38" cy="32" r="15" fill="none" stroke="#5ef2ff" strokeWidth="5" style={{ mixBlendMode: "screen" }} />
-      </svg>
-      <span className="font-serif text-2xl tracking-tight">PARALLAX</span>
-    </button>
-  );
-}
+const NAV = [
+  ["summary", "Short answer"],
+  ["missing", "What you'd miss"],
+  ["website", "Your website"],
+  ["places", "Every place"],
+  ["compare", "Compare two"],
+  ["ai", "AI answers"],
+  ["map", "Map"],
+  ["deeper", "Deeper analysis"],
+] as const;
 
-function Badge({ on, label, title }: { on: boolean; label: string; title?: string }) {
-  return (
-    <span title={title} className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider ${on ? "border-cyan/30 text-cyan" : "border-amber/30 text-amber"}`}>
-      <span className={`h-1.5 w-1.5 rounded-full ${on ? "bg-cyan" : "bg-amber"} animate-pulse`} />
-      {label}
-    </span>
-  );
+function useActiveSection(enabled: boolean) {
+  const [active, setActive] = useState("summary");
+  useEffect(() => {
+    if (!enabled) return;
+    const els = NAV.map(([id]) => document.getElementById(id)).filter(Boolean) as HTMLElement[];
+    const io = new IntersectionObserver(
+      (entries) => {
+        const vis = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        if (vis[0]) setActive(vis[0].target.id);
+      },
+      { rootMargin: "-120px 0px -60% 0px" },
+    );
+    els.forEach((e) => io.observe(e));
+    return () => io.disconnect();
+  }, [enabled]);
+  return active;
 }
 
 export default function App() {
   const [config, setConfig] = useState<Config | null>(null);
-  const [account, setAccount] = useState<Account | null>(null);
-  const [lensId, setLensId] = useState("cities");
-  const [selected, setSelected] = useState<string[]>([]);
-  const [custom, setCustom] = useState<Vantage[]>([]);
+  const [creditsLeft, setCreditsLeft] = useState<number | null>(null);
+  const [route, setRoute] = useState<Route>(readRoute);
+  const [opts, setOpts] = useState<ScanOptions | null>(null);
+  const [home, setHome] = useState("");
+  const [site, setSite] = useState(route.site ?? "");
   const [focusId, setFocusId] = useState<string | null>(null);
   const [pair, setPair] = useState<[string, string] | null>(null);
   const [share, setShare] = useState(false);
-  const [q, setQ] = useState("");
-  const { state, start, reset } = useScan();
+  const [editing, setEditing] = useState(false);
+  const [setup, setSetup] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [prev, setPrev] = useState<{ payload: ScanPayload; created_at: number } | null>(null);
+  const [notFound, setNotFound] = useState(false);
+  const { state, start, load, reset } = useScan();
 
   const refreshAccount = useCallback(() => {
-    fetch("/api/account").then((r) => r.json()).then(setAccount).catch(() => {});
+    fetch("/api/account")
+      .then((r) => r.json())
+      .then((a) => setCreditsLeft(a.total_searches_left ?? null))
+      .catch(() => {});
   }, []);
 
+  const openScan = useCallback(
+    (id: string, push = true) => {
+      setNotFound(false);
+      fetch(`/api/scans/${id}`)
+        .then((r) => (r.ok ? r.json() : Promise.reject()))
+        .then((s: SavedScan) => {
+          load(s);
+          setPair(null);
+          setFocusId(null);
+          setOpts(null);
+          const next: Route = { page: "scan", scan: id, home: route.home, site: route.site };
+          setRoute(next);
+          if (push) writeRoute(next);
+          window.scrollTo({ top: 0 });
+        })
+        .catch(() => setNotFound(true));
+    },
+    [load, route.home, route.site],
+  );
+
+  const runScan = useCallback(
+    (o: ScanOptions) => {
+      setOpts(o);
+      setHome(o.home);
+      setSite(o.site);
+      setPair(null);
+      setFocusId(null);
+      setPrev(null);
+      setEditing(false);
+      start({ query: o.query, lens: o.lens, vantageIds: o.vantageIds, custom: o.custom, trends: true });
+      const next: Route = { page: "scan", q: o.query, lens: o.lens, home: o.home, site: o.site || undefined };
+      setRoute(next);
+      writeRoute(next);
+      window.scrollTo({ top: 0 });
+    },
+    [start],
+  );
+
+  // Boot: config, account, and whatever the URL asks for.
   useEffect(() => {
-    fetch("/api/config")
-      .then((r) => r.json())
-      .then((c: Config) => {
-        setConfig(c);
-        setSelected(c.lenses[0].vantages.map((v) => v.id));
-      });
+    fetch("/api/config").then((r) => r.json()).then(setConfig);
     refreshAccount();
-  }, [refreshAccount]);
+    const r = readRoute();
+    if (r.scan) openScan(r.scan, false);
+    else if (r.q) {
+      setHome(r.home ?? "");
+      start({ query: r.q, lens: r.lens ?? "cities", vantageIds: [], custom: [], trends: true });
+    }
+    const onPop = () => {
+      const r2 = readRoute();
+      setRoute(r2);
+      if (r2.scan) openScan(r2.scan, false);
+      else if (r2.page === "home") reset();
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
+  // When a fresh scan finishes: point the URL at the saved copy and look for an earlier run.
   useEffect(() => {
-    if (state.status === "done") refreshAccount();
-  }, [state.status, refreshAccount]);
+    if (state.status !== "done" || !state.id) return;
+    refreshAccount();
+    const next: Route = { page: "scan", scan: state.id, home: home || undefined, site: site || undefined };
+    writeRoute(next, true);
+    setRoute(next);
+    fetch(`/api/scans/${state.id}/previous`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((p: SavedScan | null) => setPrev(p?.payload ? { payload: p.payload, created_at: p.created_at } : null))
+      .catch(() => setPrev(null));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.status, state.id]);
 
-  const scan = (query: string) => {
-    setQ(query);
-    setFocusId(null);
-    setPair(null);
-    start({ query, lens: lensId, vantageIds: selected, custom, trends: true });
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const vmap = useMemo(() => Object.fromEntries(state.vantages.map((v) => [v.id, v])), [state.vantages]);
   const a = state.analysis?.ok ? state.analysis : null;
-  const diffPair: [string, string] | null = pair ?? (a ? [a.most_different.a, a.most_different.b] : null);
-  const reported = Object.values(state.statuses).filter((s) => s !== "pending").length;
-  const progress = state.vantages.length ? reported / state.vantages.length : 0;
+  const vmap = useMemo(() => Object.fromEntries(state.vantages.map((v) => [v.id, v])), [state.vantages]);
+  const ids = a?.order ?? [];
+  const homeId = home && ids.includes(home) ? home : ids[0] ?? "";
   const scanning = state.status === "scanning" || state.status === "analyzing";
-  const focus = state.vantages.some((v) => v.gl !== "in") ? "world" : "india";
-  const results = state.results;
-  const diffOpposite = (id: string) => {
-    if (!a) return;
+  const showResults = route.page === "scan" && state.status !== "idle";
+  const active = useActiveSection(!!a);
+  const changes = useMemo(() => (prev && a ? changesSince(prev.payload, { results: state.results, analysis: a }) : null), [prev, a, state.results]);
+
+  const mostDifferentFrom = (id: string) => {
+    if (!a) return id;
     const i = a.order.indexOf(id);
-    let other = a.order[i === 0 ? 1 : 0];
+    let best = a.order.find((x) => x !== id) ?? id;
     a.order.forEach((o, j) => {
-      if (j !== i && a.matrix[i][j] < a.matrix[i][a.order.indexOf(other)]) other = o;
+      if (j !== i && a.matrix[i][j] < a.matrix[i][a.order.indexOf(best)]) best = o;
     });
-    setPair([id, other]);
-    setTimeout(() => document.getElementById("diff")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+    return best;
   };
-  const goHome = () => {
-    reset();
+  const diffPair: [string, string] | null = pair ?? (a && homeId ? [homeId, mostDifferentFrom(homeId)] : null);
+
+  const updateHome = (id: string) => {
+    setHome(id);
+    setPair(null);
+    const next = { ...route, home: id };
+    setRoute(next);
+    writeRoute(next, true);
+  };
+  const updateSite = (s: string) => {
+    setSite(s);
+    const next = { ...route, site: s || undefined };
+    setRoute(next);
+    writeRoute(next, true);
+  };
+
+  const go = (page: "home" | "history") => {
+    if (page === "home") reset();
+    const next: Route = { page };
+    setRoute(next);
+    writeRoute(next);
+    setNotFound(false);
     window.scrollTo({ top: 0 });
   };
 
+  const when = state.savedAt ? new Date(state.savedAt * 1000) : new Date();
+  const base = `parallax-${slug(state.query)}`;
+  const exportActions = {
+    csv: () => download(`${base}.csv`, toCSV(state.query, state.vantages, state.results), "text/csv"),
+    md: () => a && download(`${base}.md`, toMarkdown({ query: state.query, vantages: state.vantages, results: state.results, analysis: a, brief: state.brief, live: state.live, when }), "text/markdown"),
+    json: () =>
+      download(
+        `${base}.json`,
+        JSON.stringify({ query: state.query, lens: state.lens, saved_at: when.toISOString(), vantages: state.vantages, results: state.results, analysis: a, trends: state.trends, analysis_text: state.brief }, null, 2),
+        "application/json",
+      ),
+    image: () => setShare(true),
+    print: () => window.print(),
+  };
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      /* clipboard blocked */
+    }
+  };
+
   return (
-    <div className="grain min-h-screen">
-      {/* Top bar */}
-      <header className="fixed inset-x-0 top-0 z-50">
-        <div className={`mx-auto flex max-w-[1500px] items-center gap-3 px-4 py-3 md:px-6 ${state.status !== "idle" ? "glass rounded-b-2xl border-t-0" : ""}`}>
-          <Logo onClick={goHome} />
-          {state.status !== "idle" && (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (q.trim()) scan(q.trim());
-              }}
-              className="mx-auto hidden w-full max-w-xl items-center gap-2 rounded-full border border-line bg-black/40 py-1 pl-4 pr-1 md:flex"
-            >
-              <input value={q} onChange={(e) => setQ(e.target.value)} className="min-w-0 flex-1 bg-transparent text-sm outline-none" />
-              <select
-                value={lensId}
-                onChange={(e) => {
-                  const l = config?.lenses.find((x) => x.id === e.target.value);
-                  setLensId(e.target.value);
-                  if (l) setSelected(l.vantages.map((v) => v.id));
-                  setCustom([]);
-                }}
-                className="rounded-full border border-line bg-ink-2 px-2 py-1 text-xs text-muted outline-none"
-              >
-                {config?.lenses.map((l) => (
-                  <option key={l.id} value={l.id}>{l.name}</option>
-                ))}
-              </select>
-              <button className="rounded-full bg-fg px-4 py-1.5 text-xs font-semibold text-ink">Scan</button>
-            </form>
-          )}
-          <div className="ml-auto flex items-center gap-2">
-            {config && <Badge on={config.live} label={config.live ? "Live SerpApi" : "Demo data"} title={config.live ? "Results come from SerpApi in real time" : "No SERPAPI_API_KEY set — synthetic sample data"} />}
-            {config && <Badge on={config.ai} label={config.ai ? "AI analyst" : "No LLM"} />}
-            {account && !account.demo && account.total_searches_left != null && (
-              <span className="hidden rounded-full border border-line px-2.5 py-1 font-mono text-[10px] text-muted sm:block">{account.total_searches_left} credits left</span>
-            )}
-          </div>
+    <div className="min-h-screen">
+      <Header config={config} creditsLeft={creditsLeft} page={route.page === "history" ? "history" : route.page === "home" || !showResults ? "home" : "scan"} go={go} onSetup={() => setSetup(true)} />
+
+      {route.page === "history" ? (
+        <History onOpen={(id) => openScan(id)} />
+      ) : notFound ? (
+        <div className="mx-auto max-w-xl px-5 py-24 text-center">
+          <h1 className="text-[32px]">That search isn't saved here</h1>
+          <p className="mt-3 text-ink-2">Saved searches live on the computer that ran them. You can run the search again from the start page.</p>
+          <button onClick={() => go("home")} className="btn btn-primary mt-6">Start a new search</button>
         </div>
-      </header>
-
-      <AnimatePresence mode="wait">
-        {state.status === "idle" ? (
-          <motion.div key="hero" exit={{ opacity: 0, y: -40, filter: "blur(8px)" }} transition={{ duration: 0.5 }}>
-            <Hero
-              config={config}
-              lensId={lensId}
-              setLensId={(id) => {
-                setLensId(id);
-                setCustom([]);
-              }}
-              selected={selected}
-              setSelected={setSelected}
-              custom={custom}
-              setCustom={setCustom}
-              onScan={scan}
-            />
-          </motion.div>
-        ) : (
-          <motion.main key="obs" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }} className="mx-auto max-w-[1500px] px-4 pb-24 pt-24 md:px-6">
-            {!state.live && state.vantages.length > 0 && (
-              <div className="mb-5 flex flex-wrap items-center gap-3 rounded-2xl border border-amber/25 bg-amber/[0.05] px-4 py-2.5 text-[13px] text-amber/90">
-                <span className="font-mono text-[10px] uppercase tracking-widest">Demo mode</span>
-                <span className="text-amber/70">Results are {state.done?.recorded ? "replayed recordings" : "synthetic sample data"}. Add <code className="rounded bg-black/30 px-1">SERPAPI_API_KEY</code> to <code className="rounded bg-black/30 px-1">.env</code> for live Google results.</span>
-              </div>
-            )}
-
-            {/* Headline */}
-            <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+      ) : !showResults ? (
+        <Landing config={config} creditsLeft={creditsLeft} onScan={runScan} onOpen={(id) => openScan(id)} />
+      ) : (
+        <main>
+          {/* Title block (above the sticky nav so its menus aren't covered) */}
+          <div className="relative z-[45] mx-auto max-w-[1320px] px-5 pt-8 md:px-8">
+            <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="min-w-0">
-                <div className="eyebrow">{scanning ? "Scanning" : "Scanned"} · {state.vantages.length} vantages · {config?.lenses.find((l) => l.id === state.lens)?.name}</div>
-                <h1 className="mt-2 font-serif text-[clamp(36px,5.5vw,76px)] italic leading-[0.95]">“{state.query}”</h1>
+                <div className="text-[13.5px] text-muted">
+                  {LENS_NAME[state.lens] ?? state.lens} · {state.vantages.length} places · {state.live ? "live Google results" : "demo data"}
+                  {state.savedAt && !scanning ? ` · ${timeAgo(state.savedAt)}` : ""}
+                  {state.done && state.done.credits > 0 ? ` · used ${state.done.credits} searches` : ""}
+                </div>
+                <h1 className="mt-1 text-[clamp(32px,4.4vw,52px)] leading-[1.05]">“{state.query}”</h1>
               </div>
-              {a && (
-                <button onClick={() => setShare(true)} className="group flex items-center gap-2 rounded-full border border-line-2 px-4 py-2 text-sm transition hover:border-cyan/50 hover:bg-cyan/5">
-                  <span className="text-cyan">↗</span> Share card
-                </button>
+              {!scanning && (
+                <div className="no-print flex flex-wrap items-center gap-2">
+                  <button onClick={() => setEditing(!editing)} className="btn btn-ghost">{editing ? "Close" : "Change search"}</button>
+                  <button onClick={copyLink} className="btn btn-ghost" disabled={!state.id}>{copied ? "Link copied" : "Copy link"}</button>
+                  {a && <ExportMenu actions={exportActions} />}
+                </div>
               )}
             </div>
-
-            {/* Observatory */}
-            <div className="grid gap-4 lg:grid-cols-[1.45fr_1fr]">
-              <div className="panel relative h-[460px] overflow-hidden md:h-[620px]">
-                <div className="absolute inset-0">
-                  <DotGlobe vantages={state.vantages} statuses={state.statuses} analysis={a} focus={focus} selected={focusId} onSelect={setFocusId} />
-                </div>
-                <div className="pointer-events-none absolute left-5 top-5">
-                  <div className="eyebrow">Observatory</div>
-                  <div className="mt-1 text-[12.5px] text-muted">{a ? "Cyan arcs: similar results · red: furthest apart" : "Results stream in as each SerpApi search lands"}</div>
-                </div>
-                <div className="absolute bottom-4 right-4 flex gap-1.5">
-                  {state.vantages.map((v) => (
-                    <button key={v.id} onClick={() => setFocusId(focusId === v.id ? null : v.id)} title={v.label} className={`h-2.5 w-2.5 rounded-full transition ${state.statuses[v.id] === "ok" ? (focusId === v.id ? "scale-150 bg-fg" : "bg-cyan/70") : state.statuses[v.id] === "error" ? "bg-red" : "animate-pulse bg-white/15"}`} />
-                  ))}
-                </div>
-                <AnimatePresence>
-                  {focusId && results[focusId] && vmap[focusId] && (
-                    <Inspector key={focusId} v={vmap[focusId]} r={results[focusId]} a={a} onClose={() => setFocusId(null)} onDiff={diffOpposite} />
-                  )}
-                </AnimatePresence>
+            {editing && (
+              <div className="mt-5 rounded-md border border-rule bg-card p-4">
+                <ScanForm
+                  config={config}
+                  compact
+                  creditsLeft={creditsLeft}
+                  initial={{ query: state.query, lens: state.lens, home: homeId, site, vantageIds: opts?.vantageIds, custom: opts?.custom }}
+                  onSubmit={runScan}
+                />
               </div>
-              <div className="flex flex-col gap-4">
-                <div className="panel p-6">
-                  <IndexGauge analysis={a} progress={progress} />
-                  {a && (
-                    <div className="mt-6 grid grid-cols-3 gap-2 border-t border-line pt-5 text-center">
-                      <div>
-                        <div className="font-mono text-2xl">{a.unique_domains}</div>
-                        <div className="eyebrow !text-[9.5px]">unique sources</div>
-                      </div>
-                      <div>
-                        <div className="font-mono text-2xl text-cyan">{Math.round(a.most_similar.sim * 100)}%</div>
-                        <div className="eyebrow !text-[9.5px]">{vmap[a.most_similar.a]?.code}≈{vmap[a.most_similar.b]?.code}</div>
-                      </div>
-                      <div>
-                        <div className="font-mono text-2xl text-red">{Math.round(a.most_different.sim * 100)}%</div>
-                        <div className="eyebrow !text-[9.5px]">{vmap[a.most_different.a]?.code}≠{vmap[a.most_different.b]?.code}</div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                <LiveFeed logs={state.logs} active={scanning} />
-                {state.done && (
-                  <div className="grid grid-cols-3 gap-2 font-mono text-[11px] text-muted">
-                    <div className="rounded-xl border border-line px-3 py-2"><span className="text-fg">{state.done.elapsed}s</span> total</div>
-                    <div className="rounded-xl border border-line px-3 py-2"><span className="text-fg">{state.done.credits}</span> credits used</div>
-                    <div className="rounded-xl border border-line px-3 py-2"><span className="text-fg">{state.done.cached}</span> from cache</div>
-                  </div>
-                )}
-              </div>
-            </div>
+            )}
+            {!state.live && config && !config.live && (
+              <p className="mt-4 text-[13.5px] text-gold">
+                These are demo results, not real Google data.{" "}
+                <button onClick={() => setSetup(true)} className="underline">How to switch to live data</button>
+              </p>
+            )}
+          </div>
 
-            {state.analysis && !state.analysis.ok && (
-              <div className="mt-6 rounded-2xl border border-red/30 bg-red/5 p-5 text-sm text-red">Not enough results to compare: {state.analysis.reason}</div>
+          {/* Section nav */}
+          {a && (
+            <nav className="no-print sticky top-14 z-40 mt-6 border-y border-rule bg-paper/95 backdrop-blur">
+              <div className="scrollbar-thin mx-auto flex max-w-[1320px] gap-1 overflow-x-auto px-5 md:px-8">
+                {NAV.map(([id, label]) => (
+                  <a key={id} href={`#${id}`} className={`whitespace-nowrap border-b-2 px-3 py-2.5 text-[14px] transition ${active === id ? "border-accent font-medium text-ink" : "border-transparent text-ink-2 hover:text-ink"}`}>
+                    {label}
+                  </a>
+                ))}
+              </div>
+            </nav>
+          )}
+
+          <div className="mx-auto max-w-[1320px] px-5 md:px-8">
+            {(scanning || !a) && (
+              <div className="grid gap-10 py-10 lg:grid-cols-[1fr_440px]">
+                <Progress state={state} />
+                <div className="aspect-square w-full max-w-[440px]">
+                  <DotGlobe vantages={state.vantages} statuses={state.statuses} analysis={null} focus={state.vantages.some((v) => v.gl !== "in") ? "world" : "india"} interactive={false} />
+                </div>
+                {state.analysis && !state.analysis.ok && <p className="text-accent">Not enough places returned results to compare ({state.analysis.reason}).</p>}
+                {state.status === "error" && <p className="text-accent">Lost the connection to the Parallax server. Is it still running?</p>}
+              </div>
             )}
 
             {a && (
-              <div className="mt-4 space-y-4">
-                <Section n="01" title="Realities" kicker="Vantages clustered by how similar their result pages are (average-linkage, 50% similarity cut).">
-                  <Realities analysis={a} vmap={vmap} results={results} onSelect={setFocusId} />
+              <>
+                <Section id="summary" kicker="The short answer" title={`Does where you search change what you see?`}>
+                  <Summary a={a} lens={state.lens} vmap={vmap} brief={state.brief} streaming={state.status === "analyzing"} ai={!!config?.ai} changes={changes} prevWhen={prev ? timeAgo(prev.created_at) : null} />
                 </Section>
 
-                <Section n="02" title="Field report" kicker="What a person in each place would walk away believing.">
-                  <Brief text={state.brief} streaming={state.status === "analyzing"} ai={!!config?.ai} model={config?.model ?? null} />
+                <Section id="missing" kicker="Your blind spots" title="What you'd miss by searching from one place" intro="These are sources other places see on their first page of Google, but you don't. Change your place to see someone else's blind spots.">
+                  <BlindSpots home={homeId} setHome={updateHome} ids={ids} vmap={vmap} results={state.results} />
                 </Section>
 
-                <div className="grid gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-                  <Section n="03" title="Divergence matrix" kicker="Every vantage against every other. Click a cell to diff the two pages.">
-                    <Matrix analysis={a} vmap={vmap} selected={focusId} onSelect={setFocusId} onPair={(x, y) => { setPair([x, y]); document.getElementById("diff")?.scrollIntoView({ behavior: "smooth", block: "start" }); }} />
-                  </Section>
-                  <Section n="04" title="The AI layer" kicker="Does Google's AI Overview show up, and which sources does it trust, in each place?">
-                    <AiLens analysis={a} vmap={vmap} results={results} />
-                  </Section>
-                </div>
-
-                <Section n="05" title="Rank rivers" kicker="Each line is a website moving through the rankings from one vantage to the next. Dashed drops mean it fell off page one.">
-                  <Rivers analysis={a} vmap={vmap} />
+                <Section id="website" kicker="For businesses and publishers" title="Where does a website rank in each place?" intro="See your site's position in every place, where it doesn't make page one, and who outranks it. Works for any site, including competitors.">
+                  <SiteReport site={site} setSite={updateSite} ids={ids} vmap={vmap} results={state.results} suggestions={[a.plain.top1_domain, ...a.consensus.map((c) => c.domain)].filter((d, i, arr) => arr.indexOf(d) === i)} />
                 </Section>
 
-                <div id="diff" className="scroll-mt-24">
-                  {diffPair && (
-                    <Section n="06" title="Page diff" kicker="Two vantages side by side. Cyan links: the same page. Violet: same site, different page. Red: only one side sees it.">
-                      <SerpDiff ids={a.order} vmap={vmap} results={results} pair={diffPair} setPair={setPair} />
-                    </Section>
-                  )}
-                </div>
-
-                <Section n="07" title="Only here" kicker="Sources that appear in exactly one vantage: the local voices everyone else never hears.">
-                  <Exclusives analysis={a} vmap={vmap} />
+                <Section id="places" kicker="The raw results" title="Every place's first page, side by side" intro="Columns are grouped by which places see similar results. Click a column title for the full list with headlines.">
+                  <ByPlace a={a} vmap={vmap} results={state.results} site={site} onOpen={(id) => { setFocusId(id); document.getElementById("map")?.scrollIntoView({ behavior: "smooth" }); }} />
                 </Section>
 
-                <Section n="08" title="Anatomy of the page" kicker="Whose voices fill the top ten, which page features show up, and which words are unusually common in each place.">
-                  <Anatomy analysis={a} vmap={vmap} />
+                <Section id="compare" kicker="Side by side" title="Compare two places" intro="Lines connect the same page (solid) or the same website with a different page (dashed). Results with no partner are only seen on one side.">
+                  {diffPair && <SerpDiff ids={a.order} vmap={vmap} results={state.results} pair={diffPair} setPair={setPair} />}
                 </Section>
 
-                {state.trends && (
-                  <Section n="09" title="India's appetite" kicker="Google Trends: where in India people search for this, and when.">
-                    <IndiaHeat trends={state.trends} vantages={state.vantages} />
-                  </Section>
-                )}
+                <Section id="ai" kicker="Google's AI Overview" title="Does Google's AI answer the same way everywhere?" intro="When Google shows an AI-written answer, it lists the sources it used. Each row is a place; filled squares are the websites its AI answer cited.">
+                  <AiLens analysis={a} vmap={vmap} results={state.results} />
+                </Section>
 
-                <footer className="pt-10 text-center">
-                  <div className="font-serif text-2xl italic text-muted">Same question. Different worlds.</div>
-                  <div className="mt-3 font-mono text-[11px] text-dim">
-                    Google Search · AI Overview · Google Trends · Locations · Account — all via SerpApi · RBO p=0.9 · #BuiltWithSerpApi
+                <Section id="map" kicker="Geography" title="Which places see the same thing?" intro="Places with similar results are joined by teal lines and share a colour. The red line connects the two most different places. Click a place to see its full results.">
+                  <div className="grid gap-8 lg:grid-cols-[1.4fr_1fr]">
+                    <div className="relative h-[460px] overflow-hidden rounded-md border border-rule bg-card md:h-[560px]">
+                      <DotGlobe vantages={state.vantages} statuses={state.statuses} analysis={a} focus={state.vantages.some((v) => v.gl !== "in") ? "world" : "india"} selected={focusId} onSelect={setFocusId} />
+                      <AnimatePresence>
+                        {focusId && state.results[focusId] && vmap[focusId] && (
+                          <Inspector key={focusId} v={vmap[focusId]} r={state.results[focusId]} a={a} onClose={() => setFocusId(null)} onDiff={(id) => { setPair([id, mostDifferentFrom(id)]); document.getElementById("compare")?.scrollIntoView({ behavior: "smooth" }); }} />
+                        )}
+                      </AnimatePresence>
+                    </div>
+                    <div>
+                      <div className="font-semibold">{a.clusters.length} {a.clusters.length === 1 ? "group" : "groups"} of places</div>
+                      <ol className="mt-3 space-y-4">
+                        {a.clusters.map((c, i) => {
+                          const sets = c.map((id) => new Set(state.results[id]?.organic.map((o) => o.domain)));
+                          const shared = [...(sets[0] || [])].filter((d) => sets.every((s) => s.has(d)));
+                          return (
+                            <li key={i} className="border-l-[3px] pl-3" style={{ borderColor: groupColor(i) }}>
+                              <div className="flex flex-wrap gap-x-2 text-[15px] font-medium">
+                                {c.map((id) => (
+                                  <button key={id} onClick={() => setFocusId(id)} className="hover:underline">{vmap[id]?.label}</button>
+                                ))}
+                              </div>
+                              <div className="mt-0.5 text-[13px] text-ink-2">
+                                {c.length > 1 ? (shared.length ? `All see: ${shared.slice(0, 5).join(", ")}` : "Similar order, but no website is shared by all of them") : `On its own. Only here: ${(a.exclusives[c[0]] || []).slice(0, 3).map((e) => e.domain).join(", ") || "no unique sources"}`}
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ol>
+                    </div>
                   </div>
-                </footer>
-              </div>
-            )}
-          </motion.main>
-        )}
-      </AnimatePresence>
+                </Section>
 
-      <AnimatePresence>{share && a && <ShareCard analysis={a} vmap={vmap} onClose={() => setShare(false)} />}</AnimatePresence>
+                <Section id="deeper" kicker="For researchers" title="Deeper analysis" intro="The measurements behind the summary. Download the spreadsheet for your own analysis.">
+                  <div className="space-y-14">
+                    <div>
+                      <h3 className="flex items-center text-[21px]">
+                        How alike is every pair of places?
+                        <Help wide>Each square compares two places' first pages. “Same pages” counts identical links; “Same websites” counts the same site even if the page differs; “Overall” blends both and weighs the top results more.</Help>
+                      </h3>
+                      <div className="mt-4">
+                        <Matrix analysis={a} vmap={vmap} selected={focusId} onSelect={setFocusId} onPair={(x, y) => { setPair([x, y]); document.getElementById("compare")?.scrollIntoView({ behavior: "smooth" }); }} />
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="flex items-center text-[21px]">
+                        How each website's rank moves from place to place
+                        <Help wide>Each line is a website. Follow it left to right to see it rise and fall. A line dropping to “not on page 1” means that place doesn't show it at all.</Help>
+                      </h3>
+                      <div className="mt-4">
+                        <Rivers analysis={a} vmap={vmap} />
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="text-[21px]">Who gets heard, and what the page looks like</h3>
+                      <div className="mt-4">
+                        <Anatomy analysis={a} vmap={vmap} />
+                      </div>
+                    </div>
+                    {state.trends && (
+                      <div>
+                        <h3 className="flex items-center text-[21px]">
+                          Where in India people search for this
+                          <Help>From Google Trends: relative search interest by state over the past year. 100 = the state where it's most searched.</Help>
+                        </h3>
+                        <div className="mt-4">
+                          <IndiaHeat trends={state.trends} vantages={state.vantages} />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </Section>
+
+                <section className="border-t border-rule py-12 text-[14px] leading-relaxed text-ink-2">
+                  <div className="grid gap-8 md:grid-cols-3">
+                    <div>
+                      <h3 className="text-[18px] text-ink">How we measured this</h3>
+                      <p className="mt-2">Each place's search ran through SerpApi with that place's Google location and language settings, at the same time. We compare first pages link by link and website by website, giving more weight to the top results.</p>
+                    </div>
+                    <div>
+                      <h3 className="text-[18px] text-ink">What this can't show</h3>
+                      <p className="mt-2">Results here are what an anonymous person in each place sees. Your own Google account, history and device can change things further. Rankings also move during the day, so treat this as a snapshot.</p>
+                    </div>
+                    <div>
+                      <h3 className="text-[18px] text-ink">Data sources</h3>
+                      <p className="mt-2">Google Search, Google AI Overview and Google Trends, fetched through SerpApi. The analysis text is written by Claude when an Anthropic key is set.</p>
+                    </div>
+                  </div>
+                </section>
+              </>
+            )}
+          </div>
+        </main>
+      )}
+
+      <footer className="border-t border-rule">
+        <div className="mx-auto flex max-w-[1320px] flex-wrap justify-between gap-2 px-5 py-6 text-[13px] text-muted md:px-8">
+          <span>Parallax · built for the SerpApi India Hackathon 2026</span>
+          <span>Search data via SerpApi · #BuiltWithSerpApi</span>
+        </div>
+      </footer>
+
+      <AnimatePresence>{share && a && <ShareCard analysis={a} lens={state.lens} vmap={vmap} onClose={() => setShare(false)} />}</AnimatePresence>
+      {setup && config && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-ink/40 p-4" onClick={() => setSetup(false)}>
+          <div className="max-w-3xl rounded-md bg-paper p-2 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            {config.live ? (
+              <div className="p-5">
+                <div className="font-serif text-[22px] font-semibold">You're on live data</div>
+                <p className="mt-2 text-ink-2">Searches run against Google through your SerpApi account{creditsLeft != null ? `, which has ${creditsLeft} searches left this month` : ""}. Results fetched in the last 6 hours are reused for free.</p>
+                <p className="mt-2 text-ink-2">{config.ai ? `Written analysis and translations by ${config.model}.` : "Add ANTHROPIC_API_KEY to .env for written analysis and translation in language mode."}</p>
+              </div>
+            ) : (
+              <SetupGuide config={config} compact />
+            )}
+            <div className="flex justify-end p-2">
+              <button onClick={() => setSetup(false)} className="btn btn-primary">Got it</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

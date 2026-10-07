@@ -13,12 +13,12 @@ from dotenv import load_dotenv
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 load_dotenv()
 
-from fastapi import FastAPI, Query  # noqa: E402
+from fastapi import FastAPI, HTTPException, Query  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse  # noqa: E402
 from fastapi.staticfiles import StaticFiles  # noqa: E402
 
-from . import brief  # noqa: E402
+from . import brief, storage  # noqa: E402
 from .analysis import analyze  # noqa: E402
 from .engine import gateway, search_vantage, trends_for  # noqa: E402
 from .vantages import ALL_VANTAGES, LENSES, Vantage, custom_vantage  # noqa: E402
@@ -70,6 +70,30 @@ async def locations(q: str = Query("", max_length=80)):
     return out
 
 
+@app.get("/api/scans")
+async def scans(q: str = "", limit: int = Query(50, le=200)):
+    return storage.list_scans(limit=limit, query=q or None)
+
+
+@app.get("/api/scans/{sid}")
+async def scan_get(sid: str):
+    s = storage.get(sid)
+    if not s:
+        raise HTTPException(404, "Scan not found")
+    return s
+
+
+@app.get("/api/scans/{sid}/previous")
+async def scan_previous(sid: str):
+    # null (not 404) when this is the first scan of the query: it's an expected state.
+    return storage.previous(sid)
+
+
+@app.delete("/api/scans/{sid}")
+async def scan_delete(sid: str):
+    return {"deleted": storage.delete(sid)}
+
+
 @app.get("/api/scan")
 async def scan(
     q: str = Query(..., min_length=1, max_length=200),
@@ -109,6 +133,7 @@ async def scan(
             yield sse("translations", {"queries": queries, "translated": bool(tr)})
 
         results: dict[str, dict] = {}
+        errors: dict[str, str] = {}
         origins: list[str] = []
 
         async def run(v: Vantage):
@@ -123,6 +148,7 @@ async def scan(
         for fut in asyncio.as_completed(tasks):
             v, data, err = await fut
             if err:
+                errors[v.id] = err[:300]
                 yield sse("vantage", {"id": v.id, "status": "error", "error": err[:300]})
                 continue
             results[v.id] = data
@@ -132,22 +158,34 @@ async def scan(
         analysis = analyze(q, vdicts, results)
         yield sse("analysis", analysis)
 
+        tr = None
         if trend_task:
             tr = await trend_task
             origins += tr.pop("calls", [])
             yield sse("trends", tr)
 
         synthetic = "synthetic" in origins
+        text = ""
         if analysis.get("ok"):
             async for chunk in brief.stream_brief(q, vdicts, results, analysis, synthetic):
+                text += chunk
                 yield sse("brief", {"delta": chunk})
-        yield sse("done", {
+        done = {
             "elapsed": round(time.perf_counter() - started, 2),
             "credits": origins.count("live"),
             "cached": origins.count("cache"),
             "synthetic": synthetic,
             "recorded": origins.count("recorded"),
-        })
+        }
+        if results:
+            try:
+                done["id"] = storage.save(q, lens, gateway.live, {
+                    "query": q, "lens": lens, "vantages": vdicts, "queries": queries, "results": results,
+                    "errors": errors, "analysis": analysis, "trends": tr, "brief": text, "done": done,
+                })
+            except Exception:  # history is a convenience; never fail a scan over it
+                pass
+        yield sse("done", done)
 
     return StreamingResponse(stream(), media_type="text/event-stream", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 

@@ -1,7 +1,7 @@
 import { useMemo, useState, type ReactElement } from "react";
 import { motion } from "motion/react";
 import type { Analysis, Vantage } from "../lib/types";
-import { CATEGORY_COLORS, vantageColor } from "../lib/palette";
+import { CATEGORY_COLORS, seriesColor } from "../lib/palette";
 import { useSize } from "../lib/useSize";
 
 /** Bump chart: every line is a website, every column a vantage. Watch sources rise, sink and vanish. */
@@ -19,7 +19,7 @@ export default function Rivers({ analysis, vmap }: { analysis: Analysis; vmap: R
   const y = (rank: number | null) => (rank == null ? top + rowH * 10.6 : top + (rank - 1) * rowH);
 
   const rivers = analysis.rivers;
-  const color = useMemo(() => Object.fromEntries(rivers.map((r, i) => [r.domain, vantageColor(i)])), [rivers]);
+  const color = useMemo(() => Object.fromEntries(rivers.map((r, i) => [r.domain, seriesColor(i)])), [rivers]);
 
   const curve = (x0: number, y0: number, x1: number, y1: number) => {
     const mx = (x0 + x1) / 2;
@@ -32,21 +32,21 @@ export default function Rivers({ analysis, vmap }: { analysis: Analysis; vmap: R
         {/* rank guides */}
         {Array.from({ length: 10 }, (_, k) => (
           <g key={k}>
-            <line x1={left - 20} x2={W - right + 20} y1={y(k + 1)} y2={y(k + 1)} stroke="rgba(255,255,255,0.04)" />
-            <text x={4} y={y(k + 1) + 4} fontSize={10} className="font-mono" fill="#576070">
+            <line x1={left - 20} x2={W - right + 20} y1={y(k + 1)} y2={y(k + 1)} stroke="rgba(26,24,20,0.08)" />
+            <text x={4} y={y(k + 1) + 4} fontSize={11} fill="#777166">
               #{k + 1}
             </text>
           </g>
         ))}
-        <line x1={left - 20} x2={W - right + 20} y1={y(null)} y2={y(null)} stroke="rgba(255,77,109,0.25)" strokeDasharray="2 4" />
-        <text x={4} y={y(null) + 4} fontSize={10} className="font-mono" fill="#ff4d6d" opacity={0.7}>
-          gone
+        <line x1={left - 20} x2={W - right + 20} y1={y(null)} y2={y(null)} stroke="rgba(200,68,42,0.35)" strokeDasharray="2 4" />
+        <text x={4} y={y(null) + 4} fontSize={11} fill="#c8442a">
+          not on page 1
         </text>
         {ids.map((id, i) => (
           <g key={id}>
-            <line x1={x(i)} x2={x(i)} y1={top - 14} y2={y(null) + 10} stroke="rgba(255,255,255,0.05)" />
-            <text x={x(i)} y={14} textAnchor="middle" fontSize={11} className="font-mono" fill="#e9ecf1">
-              {vmap[id]?.code}
+            <line x1={x(i)} x2={x(i)} y1={top - 14} y2={y(null) + 10} stroke="rgba(26,24,20,0.08)" />
+            <text x={x(i)} y={14} textAnchor="middle" fontSize={12} fontWeight={500} fill="#1a1814">
+              {vmap[id]?.label}
             </text>
           </g>
         ))}
@@ -87,9 +87,9 @@ export default function Rivers({ analysis, vmap }: { analysis: Analysis; vmap: R
                 if (rank == null) return null;
                 return (
                   <g key={id} opacity={dim ? 0.12 : 1}>
-                    <circle cx={x(i)} cy={y(rank)} r={hover === r.domain ? 10 : 7.5} fill="#06070a" stroke={c} strokeWidth={2} />
+                    <circle cx={x(i)} cy={y(rank)} r={hover === r.domain ? 10 : 7.5} fill="#fbf9f4" stroke={c} strokeWidth={2} />
                     {hover === r.domain && (
-                      <text x={x(i)} y={y(rank) + 3.5} textAnchor="middle" fontSize={9.5} fill="#fff" className="font-mono">
+                      <text x={x(i)} y={y(rank) + 3.5} textAnchor="middle" fontSize={9.5} fill="#1a1814">
                         {rank}
                       </text>
                     )}
@@ -120,10 +120,10 @@ export default function Rivers({ analysis, vmap }: { analysis: Analysis; vmap: R
           <button key={r.domain} onMouseEnter={() => setHover(r.domain)} onMouseLeave={() => setHover(null)} className={`flex items-center gap-2 transition ${hover && hover !== r.domain ? "opacity-40" : ""}`}>
             <span className="h-2 w-2 rounded-full" style={{ background: color[r.domain] }} />
             {r.domain}
-            <span className="rounded px-1 font-mono text-[9.5px]" style={{ color: CATEGORY_COLORS[r.category], background: CATEGORY_COLORS[r.category] + "1a" }}>
+            <span className="rounded px-1 text-[11px]" style={{ color: CATEGORY_COLORS[r.category], background: CATEGORY_COLORS[r.category] + "1a" }}>
               {r.category}
             </span>
-            <span className="font-mono text-[10px] text-dim">{Math.round(r.share * 100)}%</span>
+            <span className="text-[11.5px] text-muted">in {Math.round(r.share * 100)}% of places</span>
           </button>
         ))}
       </div>

@@ -78,4 +78,29 @@ def test_offline_brief_streams():
         return "".join([c async for c in _offline(a, [v.to_dict() for v in CITIES])])
 
     text = asyncio.run(collect())
-    assert "PARALLAX" in text and "Blind spot" in text
+    assert "What to do" in text and "**" in text
+
+
+def test_plain_metrics():
+    q = "best phone under 30000"
+    results = {v.id: normalize(demo.google(v.params(q))) for v in CITIES}
+    a = analyze(q, [v.to_dict() for v in CITIES], results)
+    p = a["plain"]
+    assert 0 <= p["avg_differ"] <= 10
+    assert p["places"] == len(CITIES)
+    assert 1 <= p["top1_agree"] <= len(CITIES)
+    n = len(CITIES)
+    assert all(a["shared_links"][i][i] == len(results[a["order"][i]]["organic"]) for i in range(n))
+
+
+def test_storage_roundtrip(tmp_path, monkeypatch):
+    from parallax import storage
+
+    monkeypatch.setattr(storage, "DB_PATH", tmp_path / "t.db")
+    first = storage.save("UPI", "cities", False, {"analysis": {"plain": {}}, "vantages": []})
+    second = storage.save("upi ", "cities", False, {"analysis": {"plain": {}}, "vantages": [], "brief": "x"})
+    assert storage.get(second)["payload"]["brief"] == "x"
+    assert storage.previous(second)["id"] == first
+    assert storage.previous(first) is None
+    assert [s["id"] for s in storage.list_scans()] == [second, first]
+    assert storage.delete(first) and storage.get(first) is None

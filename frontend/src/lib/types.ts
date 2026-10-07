@@ -108,6 +108,19 @@ export interface Analysis {
   top1: [string, number][];
   unique_domains: number;
   facts: string[];
+  plain: {
+    avg_differ: number;
+    avg_len: number;
+    avg_shared_sources: number;
+    top1_domain: string;
+    top1_agree: number;
+    places: number;
+    groups: number;
+    ai_count: number;
+    local_count: number;
+  };
+  shared_links: number[][];
+  shared_sources: number[][];
 }
 
 export interface Trends {
@@ -118,6 +131,7 @@ export interface Trends {
 }
 
 export interface Done {
+  id?: string;
   elapsed: number;
   credits: number;
   cached: number;
@@ -150,4 +164,29 @@ export interface ScanState {
   done: Done | null;
   logs: LogLine[];
   startedAt: number;
+  id: string | null;
+  savedAt: number | null;
+}
+
+export interface ScanPayload {
+  query: string;
+  lens: string;
+  vantages: Vantage[];
+  queries: Record<string, string>;
+  results: Record<string, VantageResult>;
+  errors: Record<string, string>;
+  analysis: Analysis;
+  trends: Trends | null;
+  brief: string;
+  done: Done;
+}
+
+export interface SavedScan {
+  id: string;
+  created_at: number;
+  query: string;
+  lens: string;
+  live: boolean;
+  summary: { places: number; score: number; verdict: string; groups: number; avg_differ: number; top1: string; synthetic: boolean };
+  payload?: ScanPayload;
 }

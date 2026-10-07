@@ -11,14 +11,14 @@ export default function Matrix({ analysis, vmap, selected, onSelect, onPair }: {
   const ids = analysis.order;
   const n = ids.length;
   const cell = Math.max(22, Math.min(40, 440 / n));
-  const pad = 46;
+  const pad = 96;
 
   return (
     <div>
-      <div className="mb-4 flex items-center gap-1 rounded-full border border-line p-1 text-[12px] w-fit">
+      <div className="mb-4 flex w-fit items-center gap-1 rounded-md border border-rule-2 p-1 text-[13px]">
         {(["blend", "url", "domain"] as Mode[]).map((k) => (
-          <button key={k} onClick={() => setMode(k)} className={`rounded-full px-3 py-1 transition ${mode === k ? "bg-fg text-ink" : "text-muted hover:text-fg"}`}>
-            {k === "blend" ? "Blended" : k === "url" ? "Same pages" : "Same sources"}
+          <button key={k} onClick={() => setMode(k)} className={`rounded px-3 py-1 transition ${mode === k ? "bg-ink text-paper" : "text-ink-2 hover:text-ink"}`}>
+            {k === "blend" ? "Overall" : k === "url" ? "Same pages" : "Same websites"}
           </button>
         ))}
       </div>
@@ -30,20 +30,20 @@ export default function Matrix({ analysis, vmap, selected, onSelect, onPair }: {
                 x={pad - 6}
                 y={pad + i * cell + cell / 2 + 4}
                 textAnchor="end"
-                className="cursor-pointer font-mono"
-                fontSize={10.5}
-                fill={selected === id || hover?.[0] === i ? "#fff" : "#8a93a3"}
+                className="cursor-pointer"
+                fontSize={12}
+                fill={selected === id || hover?.[0] === i ? "#1a1814" : "#777166"}
                 onClick={() => onSelect(id)}
               >
-                {vmap[id]?.code}
+                {vmap[id]?.label}
               </text>
               <text
                 transform={`translate(${pad + i * cell + cell / 2 + 4}, ${pad - 6}) rotate(-90)`}
-                className="font-mono"
-                fontSize={10.5}
-                fill={selected === id || hover?.[1] === i ? "#fff" : "#8a93a3"}
+                
+                fontSize={12}
+                fill={selected === id || hover?.[1] === i ? "#1a1814" : "#777166"}
               >
-                {vmap[id]?.code}
+                {vmap[id]?.label}
               </text>
             </g>
           ))}
@@ -56,8 +56,8 @@ export default function Matrix({ analysis, vmap, selected, onSelect, onPair }: {
                 width={cell - 2}
                 height={cell - 2}
                 rx={4}
-                fill={i === j ? "rgba(255,255,255,0.05)" : simColor(s)}
-                stroke={hover && hover[0] === i && hover[1] === j ? "#fff" : "transparent"}
+                fill={i === j ? "rgba(26,24,20,0.08)" : simColor(s)}
+                stroke={hover && hover[0] === i && hover[1] === j ? "#1a1814" : "transparent"}
                 strokeWidth={1.5}
                 className="cursor-pointer transition-[fill] duration-500"
                 onMouseEnter={() => setHover([i, j])}
@@ -72,20 +72,23 @@ export default function Matrix({ analysis, vmap, selected, onSelect, onPair }: {
         <div className="text-sm">
           {hover && hover[0] !== hover[1] ? (
             <>
-              <span className="text-fg">{vmap[ids[hover[0]]]?.label}</span>
-              <span className="text-dim"> ↔ </span>
-              <span className="text-fg">{vmap[ids[hover[1]]]?.label}</span>
-              <span className="ml-3 font-mono text-cyan">{Math.round(m[hover[0]][hover[1]] * 100)}% alike</span>
-              <span className="ml-2 text-[11px] text-dim">click to diff</span>
+              <span className="text-ink">{vmap[ids[hover[0]]]?.label}</span>
+              <span className="text-faint"> ↔ </span>
+              <span className="text-ink">{vmap[ids[hover[1]]]?.label}</span>
+              <span className="ml-3 text-ink-2">
+                share <b className="num text-ink">{analysis.shared_links[hover[0]][hover[1]]}</b> of their top links and <b className="num text-ink">{analysis.shared_sources[hover[0]][hover[1]]}</b> sources ·{" "}
+                <b className="num text-teal">{Math.round(m[hover[0]][hover[1]] * 100)}%</b> alike
+              </span>
+              <span className="ml-2 text-[12px] text-muted">(click to compare)</span>
             </>
           ) : (
-            <span className="text-dim">Rank-biased overlap (p = 0.9): agreement near the top of the page counts most.</span>
+            <span className="text-ink-2">Hover a square to see how much two places share. Darker means more alike.</span>
           )}
         </div>
-        <div className="flex items-center gap-2 font-mono text-[10px] text-dim">
-          0%
+        <div className="flex items-center gap-2 text-[12px] text-muted">
+          different
           <div className="h-2 w-28 rounded-full" style={{ background: `linear-gradient(90deg, ${[0, 0.25, 0.5, 0.75, 1].map((s) => simColor(s)).join(",")})` }} />
-          100%
+          alike
         </div>
       </div>
     </div>

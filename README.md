@@ -1,76 +1,89 @@
 <div align="center">
 
-# PARALLAX
+# Parallax
 
-### One query. Twelve Indias.
+### The same Google search gives different answers in different parts of India.
 
-**Google doesn't show everyone the same internet.** PARALLAX runs one search from a dozen Indian cities, ten Indian languages or ten countries at the same moment through **SerpApi**, then measures how far the results drift apart and shows the drift.
+Type a search. Parallax runs it through **SerpApi** from 12 Indian cities, 10 Indian languages or 10 countries at the same moment. It then tells you, in plain words, what changes, who gets heard where, and what you'd miss from where you are.
 
 `SerpApi India Hackathon 2026` · Track: **Knowledge & Public Interest** · #BuiltWithSerpApi
 
-![PARALLAX hero](docs/hero.jpg)
+![Parallax start page](docs/home.jpg)
 
 </div>
 
 ---
 
-## The insight
+## Why this matters
 
-Two people in Chennai and Guwahati type the same question, *"is ayurveda effective"* or *"best phone under 30000"*. They get different top-ten lists, different AI Overviews, different local voices and a different picture of what is true.
+Most people never scroll past the first page of Google, and they only ever see it from one place. But Google tailors that page to where you are and what language you use. Someone in Guwahati and someone in Mumbai can type the same words and come away believing different things: different news outlets, different shops, a different AI answer, or no AI answer at all.
 
-Most people never see this, because you can only ever look at search from where you are. Filter bubbles are usually discussed in terms of social media feeds. **Search is the bigger and quieter one**, and in a country with 22 official languages and huge regional media ecosystems, the gap is large.
+Filter bubbles are usually discussed for social feeds. **Search is the bigger and quieter one**, and in a country with 22 official languages and strong regional media it is very large. Until now there was no easy way for an ordinary person to *see* it.
 
-PARALLAX makes that bubble **measurable**. It asks:
+## Who it's for
 
-- **How fragmented is reality for this query?** It gives a single 0–100 *Parallax index*.
-- **Which places live in the same "reality"?** It clusters vantages by result similarity.
-- **Who gets heard where?** It shows sources that rank only in one place, the shared core, and the news / government / social / commerce mix.
-- **Does Google's AI say the same thing everywhere?** It checks whether an AI Overview appears and which sources it cites, per vantage.
-- **What changes when you ask in Tamil instead of English?** The language lens rewrites the query natively and compares.
-
-**Who it helps:** journalists and fact-checkers checking regional framing, researchers studying information access, SEO and brand teams checking visibility across Indian markets, educators teaching media literacy, and anyone curious about what the internet looks like from somewhere else.
+| Who | What they get |
+|---|---|
+| **Journalists and fact-checkers** | Which outlets each city is shown for a story, and which local sources everyone else misses |
+| **Businesses and marketers** | Where their website ranks in every city, where it's missing, and which competitors beat it there. Works with no extra searches |
+| **Students and researchers** | The same question asked in Hindi, Tamil, Bengali and seven more languages, plus CSV/JSON export of every result |
+| **Anyone curious** | A plain-language answer to “does where I search change what I see?”, and a list of sources outside their bubble |
 
 ---
 
-## What it looks like
+## What you get from one search
 
-| Observatory: results stream in live | Realities and field report |
-|---|---|
-| ![](docs/observatory.jpg) | ![](docs/realities.jpg) |
+**1. The short answer.** One sentence in plain English, followed by four numbers anyone can read:
+*“6.2 of 10 top links differ between any two places”*, *“7 of 12 places show the same #1 result”*, *“6 groups of places see similar pages”*, *“5 of 12 places got Google's AI answer”*. Every number has a **?** that explains it. A written analysis (by Claude when a key is set) ends with a concrete *What to do*.
 
-| Divergence matrix and AI Overview layer | Rank rivers and page diff |
-|---|---|
-| ![](docs/matrix-ai.jpg) | ![](docs/rivers-diff.jpg) |
+![Short answer](docs/short-answer.jpg)
 
-| Language lens (native scripts) | Anatomy and India Trends heat map |
-|---|---|
-| ![](docs/languages.jpg) | ![](docs/anatomy-trends.jpg) |
+**2. What you'd miss.** Pick your city. Parallax lists the sources other places see on page one that you never do, ranked by how many places see them. It also lists the sources only you see.
 
-<sub>Screenshots above were taken in offline demo mode (synthetic sample data). With a SerpApi key, every number comes from live Google results.</sub>
+![Blind spots](docs/blind-spots.jpg)
 
-### Three lenses
+**3. Where does a website rank?** Enter any domain (yours or a competitor's). You get its rank in every place, where it isn't on page one, where Google's AI answer cites it, and who outranks it most often. It's computed from results already fetched, so it's **free**.
 
-| Lens | Vantages | What changes |
+![Website report](docs/website.jpg)
+
+**4. Every place, side by side.** Each place's first page in columns, grouped by similarity. Click a website to highlight it everywhere. Sources only one place sees are outlined.
+
+![Every place](docs/every-place.jpg)
+
+**5. Compare two places.** Two result pages with lines linking the same page or the same website. Results only one side sees are flagged.
+
+**6. Google's AI answers.** Where an AI Overview appeared, its full text, and a grid of which sources it cited in each place.
+
+**7. Map and groups.** The places on a map, coloured by which ones see the same thing.
+
+**8. Deeper analysis (for researchers).** A similarity matrix, how each website's rank moves from place to place, the source mix (news / government / social / shops …), page features, unusually common words per place, and a Google Trends map of Indian states.
+
+### Built to be used, not just looked at
+
+- **History.** Every search is saved locally. Reopening one is instant and uses no SerpApi searches.
+- **What changed since last time.** Run a search again later and Parallax tells you which places got a new #1 result and how many new sources appeared.
+- **Shareable links.** The URL always points at the saved search, your chosen city and your tracked site.
+- **Downloads.** A spreadsheet (CSV, one row per result), a written Markdown report, raw JSON, a 1200×630 share image, or print / save as PDF.
+- **Live progress.** A checklist of places shows results arriving instead of a spinner.
+- **Credit-aware.** Before you search it tells you how many SerpApi searches it will use and how many you have left. It warns you if that's more than you have, and repeats within 6 hours are free.
+- **Clear setup.** With no API key it runs on clearly labelled demo data and shows the three steps to switch to live data.
+- **Works on phones.** The layout works at phone width.
+
+| Live progress | History | Share image | Mobile |
+|---|---|---|---|
+| ![](docs/searching.jpg) | ![](docs/history.jpg) | ![](docs/share-card.jpg) | ![](docs/mobile.jpg) |
+
+<sub>Screenshots were taken in offline demo mode (synthetic sample data). With a SerpApi key every number comes from live Google results.</sub>
+
+### Three ways to compare
+
+| Mode | Places | What changes between them |
 |---|---|---|
-| **12 Indias** | Mumbai, Delhi, Bengaluru, Chennai, Kolkata, Hyderabad, Pune, Ahmedabad, Jaipur, Lucknow, Guwahati, Kochi | `location` only. Same language, same country. |
-| **10 Tongues** | English, हिन्दी, বাংলা, தமிழ், తెలుగు, मराठी, ગુજરાતી, ಕನ್ನಡ, മലയാളം, ਪੰਜਾਬੀ, each from its home city | `hl` + `location`, and the query is translated into that script by Claude |
-| **India vs World** | Delhi, Mumbai, New York, San Francisco, London, Dubai, Singapore, Toronto, Sydney, Dhaka | `gl`, `google_domain` and `location` |
+| **Indian cities** | Mumbai, Delhi, Bengaluru, Chennai, Kolkata, Hyderabad, Pune, Ahmedabad, Jaipur, Lucknow, Guwahati, Kochi | Location only. Same language, same country |
+| **Indian languages** | English, हिन्दी, বাংলা, தமிழ், తెలుగు, मराठी, ગુજરાતી, ಕನ್ನಡ, മലയാളം, ਪੰਜਾਬੀ, each from a city where it's spoken | Language and location. The search is translated into each script by Claude |
+| **India vs world** | Delhi, Mumbai, New York, San Francisco, London, Dubai, Singapore, Toronto, Sydney, Dhaka | Country, Google domain and location |
 
-You can also **add any place on Earth** as a custom vantage. It autocompletes through the SerpApi Locations API.
-
-### Nine views
-
-1. **Observatory**: a hand-drawn dotted globe on canvas. Vantages pulse while their SerpApi search is in flight and light up as results land. Arcs then connect places that see similar results; the red arc joins the two most different places.
-2. **Parallax index**: 0 = everyone sees the same page; 100 = parallel universes.
-3. **Realities**: the clusters, and the sources that everyone inside one cluster shares.
-4. **Field report**: Claude writes an analyst's brief of the scan, streamed live. A computed report is used when no LLM key is set.
-5. **Divergence matrix**: every vantage against every other, by same pages, same sources, or blended. Click a cell to diff the two places.
-6. **The AI layer**: AI Overview presence plus a citation matrix (which sources Google's AI trusts in each place).
-7. **Rank rivers**: a bump chart that traces each website's rank across vantages, including when it falls off page one.
-8. **Page diff**: two SERPs side by side, with curves linking the same page (cyan) or the same site (violet). Results only one side sees are flagged red.
-9. **Only here / Anatomy / India's appetite**: sources exclusive to one vantage, the source-type mix, SERP features, distinctive local vocabulary, and a Google Trends choropleth of Indian states plus a 12-month timeline.
-
-There's also a **Share card** that exports a 1200×630 PNG summary of any scan.
+You can switch off any place to save searches, or **add any place on Earth** (autocomplete from the SerpApi Locations API).
 
 ---
 
@@ -84,7 +97,7 @@ SerpApi is the core of the product, not an add-on. **The whole idea depends on p
 | **Google AI Overview API** (`engine=google_ai_overview`) | Follows `page_token` when an AI Overview loads lazily | Lets PARALLAX compare *what Google's AI says and cites* per place |
 | **Google Trends API** (`engine=google_trends`, `GEO_MAP_0` + `TIMESERIES`, `geo=IN`) | State-level interest map and 12-month curve | Adds *demand* to *supply*: where India actually searches for the topic |
 | **Locations API** (free) | "Add any place on Earth" autocomplete | Canonical Google location strings for custom vantages |
-| **Account API** (free) | Live "credits left" badge | Keeps credit usage visible, since the free tier is 250 searches/month |
+| **Account API** (free) | “Searches left” in the header and the pre-search estimate | Keeps credit usage visible, since the free tier is 250 searches/month |
 | **Official `serpapi` Python SDK** | All of the above | `serpapi.Client(...).search()`, `.locations()`, `.account()` |
 
 **Credit-aware by design.** One scan costs about *(number of vantages + 2)* searches. Responses are cached on disk (6 h by default), and SerpApi's own cached results are free, so re-opening a scan costs nothing. The UI shows credits used, how many results were cached, and credits remaining. You can switch individual vantages off before a scan.
@@ -94,7 +107,8 @@ SerpApi is the core of the product, not an add-on. **The whole idea depends on p
 ## The maths
 
 - **Rank-Biased Overlap (RBO)** (Webber, Moffat & Zobel, 2010) compares every pair of ranked lists with persistence *p = 0.9*, so agreement at #1 counts far more than agreement at #9. It's computed on canonicalised URLs (*same page*) and on registrable domains (*same source*), then blended 60/40.
-- **Parallax index** = `100 × (1 − mean pairwise RBO)`.
+- **Plain-language numbers** shown first: average number of top-10 links that differ between two places, #1-result agreement, number of groups, and AI-answer count.
+- **Difference score** = `100 × (1 − mean pairwise RBO)`, shown as a meter from “same everywhere” to “completely different”.
 - **Realities**: average-linkage agglomerative clustering on `1 − RBO`, cut at 50% similarity. The dendrogram leaf order also sorts the matrix and the rank rivers so similar places sit next to each other.
 - **Distinctive vocabulary**: weighted log-odds ratios with an informative Dirichlet prior (Monroe, Colaresi & Quinn, 2008), comparing each vantage's titles and snippets against the rest.
 - **Source taxonomy**: news / government (`.gov.in`, `.nic.in` …) / academic / reference / social / commerce, from a curated India-first domain list.
@@ -118,12 +132,13 @@ All of it lives in [`backend/parallax/analysis.py`](backend/parallax/analysis.py
 │ serp.py     disk cache · record/replay fixtures · offline demo          │
 │ normalize.py raw SERP → comparable shape (URL canonicalisation, eTLD+1) │
 │ analysis.py RBO · clustering · log-odds · taxonomy · AI-overview overlap│
-│ brief.py    Claude field report + native-script query translation       │
+│ brief.py    Claude plain-language analysis + query translation          │
+│ storage.py  SQLite history: reopen for free, “what changed since”       │
 │ mcp_server.py  the same engine exposed as an MCP tool for AI agents     │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-Results stream to the browser as each search lands. The globe lights up city by city instead of showing a spinner.
+Results stream to the browser as each search lands, so the progress checklist and map fill in place by place. Finished searches are saved to SQLite and the URL switches to the saved copy.
 
 ---
 
@@ -197,15 +212,18 @@ backend/parallax/
   vantages.py     cities / languages / world presets → SerpApi params
   normalize.py    SERP → comparable records
   analysis.py     RBO, clustering, log-odds, taxonomy, AI-overview overlap
-  brief.py        Claude field report and query translation (+ offline fallback)
+  brief.py        Claude plain-language analysis and translation (+ offline fallback)
+  storage.py      saved searches (SQLite), previous-run lookup for change tracking
   mcp_server.py   MCP tools for agents
   record.py       record real responses as replayable fixtures
   demo.py         labelled synthetic data for keyless exploration
 frontend/src/
-  components/     DotGlobe, IndexGauge, LiveFeed, Realities, Brief, Matrix,
-                  AiLens, Rivers, SerpDiff, Exclusives, Anatomy, IndiaHeat,
-                  Inspector, ShareCard, Hero, VantagePicker
-  lib/scan.ts     SSE client + reducer
+  components/     Landing, ScanForm, Progress, Summary, BlindSpots, SiteReport,
+                  ByPlace, SerpDiff, AiLens, DotGlobe, Inspector, Matrix, Rivers,
+                  Anatomy, IndiaHeat, History, ExportMenu, ShareCard, Help …
+  lib/scan.ts     SSE client + reducer (live scans and reopened ones)
+  lib/derive.ts   blind spots, website report, change tracking, CSV/Markdown export
+  lib/url.ts      shareable URLs
 ```
 
 ---

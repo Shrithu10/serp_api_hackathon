@@ -288,6 +288,30 @@ def analyze(query: str, vantages: list[dict], results: dict[str, dict]) -> dict:
 
     top1 = Counter(results[i]["organic"][0]["domain"] for i in ids)
 
+    # Plain-language numbers: what a non-specialist can read at a glance.
+    shared_links = {(a, b): len(set(url_lists[a]) & set(url_lists[b])) for a, b in combinations(ids, 2)}
+    shared_sources = {(a, b): len(set(dom_lists[a]) & set(dom_lists[b])) for a, b in combinations(ids, 2)}
+    differ = [max(len(url_lists[a]), len(url_lists[b])) - shared_links[(a, b)] for a, b in combinations(ids, 2)]
+    avg_len = mean(len(url_lists[i]) for i in ids)
+    top1_domain, top1_count = top1.most_common(1)[0]
+
+    def count_of(table: dict, a: str, b: str) -> int:
+        if a == b:
+            return len(url_lists[a]) if table is shared_links else len(dom_lists[a])
+        return table.get((a, b), table.get((b, a), 0))
+
+    plain = {
+        "avg_differ": round(mean(differ), 1),
+        "avg_len": round(avg_len, 1),
+        "avg_shared_sources": round(mean(shared_sources.values()), 1),
+        "top1_domain": top1_domain,
+        "top1_agree": top1_count,
+        "places": n,
+        "groups": len(clusters),
+        "ai_count": sum(1 for i in ids if results[i].get("ai_overview", {}).get("present")),
+        "local_count": sum(1 for i in ids if results[i].get("local")),
+    }
+
     def name(i: str) -> str:
         return vmap[i]["label"]
 
@@ -340,4 +364,7 @@ def analyze(query: str, vantages: list[dict], results: dict[str, dict]) -> dict:
         "top1": top1.most_common(),
         "unique_domains": len(presence),
         "facts": facts,
+        "plain": plain,
+        "shared_links": [[count_of(shared_links, a, b) for b in order] for a in order],
+        "shared_sources": [[count_of(shared_sources, a, b) for b in order] for a in order],
     }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useReducer, useRef } from "react";
-import type { Analysis, Done, LogLine, ScanState, Trends, Vantage, VantageResult } from "./types";
+import type { Analysis, Done, LogLine, SavedScan, ScanState, Trends, Vantage, VantageResult } from "./types";
 
 type Action =
   | { type: "start"; query: string; lens: string }
@@ -11,7 +11,8 @@ type Action =
   | { type: "brief"; delta: string }
   | { type: "done"; done: Done }
   | { type: "error"; message: string }
-  | { type: "reset" };
+  | { type: "reset" }
+  | { type: "load"; scan: SavedScan };
 
 export const initialScan: ScanState = {
   status: "idle",
@@ -29,6 +30,8 @@ export const initialScan: ScanState = {
   done: null,
   logs: [],
   startedAt: 0,
+  id: null,
+  savedAt: null,
 };
 
 function log(state: ScanState, line: Omit<LogLine, "t">): LogLine[] {
@@ -39,6 +42,27 @@ function reducer(state: ScanState, a: Action): ScanState {
   switch (a.type) {
     case "reset":
       return initialScan;
+    case "load": {
+      const p = a.scan.payload!;
+      return {
+        ...initialScan,
+        status: "done",
+        query: p.query,
+        lens: p.lens,
+        vantages: p.vantages,
+        live: a.scan.live,
+        statuses: Object.fromEntries(p.vantages.map((v) => [v.id, p.results[v.id] ? "ok" : "error"])) as ScanState["statuses"],
+        results: p.results,
+        errors: p.errors || {},
+        queries: p.queries || {},
+        analysis: p.analysis,
+        trends: p.trends,
+        brief: p.brief,
+        done: { ...p.done, id: a.scan.id },
+        id: a.scan.id,
+        savedAt: a.scan.created_at,
+      };
+    }
     case "start":
       return { ...initialScan, status: "scanning", query: a.query, lens: a.lens, startedAt: performance.now(), logs: [{ t: 0, kind: "info", text: `scan "${a.query}"` }] };
     case "plan":
@@ -86,6 +110,8 @@ function reducer(state: ScanState, a: Action): ScanState {
         ...state,
         status: "done",
         done: a.done,
+        id: a.done.id ?? null,
+        savedAt: Date.now() / 1000,
         logs: log(state, { kind: "info", text: `done in ${a.done.elapsed}s · ${a.done.credits} credits · ${a.done.cached} cached` }),
       };
     case "error":
@@ -142,5 +168,9 @@ export function useScan() {
   );
 
   useEffect(() => stop, [stop]);
-  return { state, start, stop, reset: () => dispatch({ type: "reset" }) };
+  const load = useCallback((scan: SavedScan) => {
+    stop();
+    dispatch({ type: "load", scan });
+  }, [stop]);
+  return { state, start, stop, load, reset: () => dispatch({ type: "reset" }) };
 }

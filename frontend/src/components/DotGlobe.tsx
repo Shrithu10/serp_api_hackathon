@@ -5,7 +5,7 @@ import type { Topology } from "topojson-specification";
 import land110 from "world-atlas/land-110m.json";
 import countries110 from "world-atlas/countries-110m.json";
 import type { Analysis, VStatus, Vantage } from "../lib/types";
-import { vantageColor } from "../lib/palette";
+import { groupColor as vantageColor } from "../lib/palette";
 
 type LngLat = [number, number];
 
@@ -137,12 +137,12 @@ export default function DotGlobe({ vantages, statuses = {}, analysis, focus, sel
       const { vantages, statuses, analysis, focus, selected, intensity, labels } = live.current;
       const R = Math.min(w, h) * 0.46;
       // Camera easing
-      const target = focus === "india" ? { lng: 80.5, lat: 21, scale: 2.35 } : { lng: cam.lng, lat: 20, scale: 1 };
+      const target = focus === "india" ? { lng: 82, lat: 22.5, scale: 3.1 } : { lng: cam.lng, lat: 20, scale: 1 };
       const idle = !drag && now - userSpin > 2500;
       if (focus === "world" && idle) cam.lng += 0.045;
       if (focus === "india" && idle) {
-        cam.lng += (target.lng + Math.sin(now / 4000) * 3 - cam.lng) * 0.03;
-        cam.lat += (target.lat + Math.cos(now / 5000) * 2 - cam.lat) * 0.03;
+        cam.lng += (target.lng + Math.sin(now / 4000) * 1.2 - cam.lng) * 0.03;
+        cam.lat += (target.lat + Math.cos(now / 5000) * 0.8 - cam.lat) * 0.03;
       }
       if (focus === "world" && idle) cam.lat += (target.lat - cam.lat) * 0.02;
       cam.scale += (target.scale - cam.scale) * 0.05;
@@ -157,22 +157,14 @@ export default function DotGlobe({ vantages, statuses = {}, analysis, focus, sel
       ctx.clearRect(0, 0, w, h);
 
       // Atmosphere + sphere body
-      const glow = ctx.createRadialGradient(cx, cy, S * 0.85, cx, cy, S * 1.25);
-      glow.addColorStop(0, "rgba(94,242,255,0.10)");
-      glow.addColorStop(0.5, "rgba(155,140,255,0.05)");
-      glow.addColorStop(1, "rgba(0,0,0,0)");
-      ctx.fillStyle = glow;
-      ctx.beginPath();
-      ctx.arc(cx, cy, S * 1.25, 0, Math.PI * 2);
-      ctx.fill();
       const body = ctx.createRadialGradient(cx - S * 0.35, cy - S * 0.4, S * 0.1, cx, cy, S);
-      body.addColorStop(0, "rgba(28,34,52,0.95)");
-      body.addColorStop(1, "rgba(8,10,16,0.98)");
+      body.addColorStop(0, "rgba(251,249,244,1)");
+      body.addColorStop(1, "rgba(232,225,211,1)");
       ctx.fillStyle = body;
       ctx.beginPath();
       ctx.arc(cx, cy, S, 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = "rgba(94,242,255,0.18)";
+      ctx.strokeStyle = "rgba(26,24,20,0.18)";
       ctx.lineWidth = 1;
       ctx.stroke();
 
@@ -180,7 +172,7 @@ export default function DotGlobe({ vantages, statuses = {}, analysis, focus, sel
       const path = d3.geoPath(proj, ctx);
       ctx.beginPath();
       path(d3.geoGraticule10());
-      ctx.strokeStyle = "rgba(255,255,255,0.035)";
+      ctx.strokeStyle = "rgba(26,24,20,0.05)";
       ctx.stroke();
 
       // Land dots
@@ -192,14 +184,14 @@ export default function DotGlobe({ vantages, statuses = {}, analysis, focus, sel
           const xy = proj(p);
           if (!xy) continue;
           const shade = Math.cos(dist);
-          ctx.globalAlpha = 0.18 + 0.82 * shade;
+          ctx.globalAlpha = 0.15 + 0.85 * shade;
           ctx.fillRect(xy[0] - size / 2, xy[1] - size / 2, size, size);
         }
         ctx.globalAlpha = 1;
       };
       const dotSize = Math.max(1.1, Math.min(2.6, S / 210));
-      drawDots(dots.world, "rgba(150,165,190,0.55)", dotSize);
-      drawDots(dots.india, focus === "india" ? "rgba(255,181,71,0.85)" : "rgba(255,181,71,0.9)", Math.max(1.2, dotSize * (focus === "india" ? 0.62 : 0.9)));
+      drawDots(dots.world, "rgba(26,24,20,0.32)", dotSize);
+      drawDots(dots.india, "rgba(26,24,20,0.62)", Math.max(1.2, dotSize * (focus === "india" ? 0.62 : 0.9)));
 
       // Positions + cluster colours
       const pos: Record<string, { x: number; y: number; vis: boolean; ll: LngLat; i: number }> = {};
@@ -257,10 +249,10 @@ export default function DotGlobe({ vantages, statuses = {}, analysis, focus, sel
           const pb = pos[e.b];
           if (!pa || !pb) continue;
           const sel = selected && (e.a === selected || e.b === selected);
-          drawArc(pa.ll, pb.ll, "#5ef2ff", sel ? 2.2 : 0.6 + e.s * 1.6, (selected && !sel ? 0.12 : 0.25 + e.s * 0.55) * intensity, [6, 5]);
+          drawArc(pa.ll, pb.ll, "#1e6a70", sel ? 2.2 : 0.6 + e.s * 1.6, (selected && !sel ? 0.12 : 0.25 + e.s * 0.55) * intensity, [6, 5]);
         }
         const md = analysis.most_different;
-        if (pos[md.a] && pos[md.b]) drawArc(pos[md.a].ll, pos[md.b].ll, "#ff4d6d", 1.8, 0.9 * intensity, [2, 6]);
+        if (pos[md.a] && pos[md.b]) drawArc(pos[md.a].ll, pos[md.b].ll, "#c8442a", 2, 0.95 * intensity, [2, 5]);
       } else {
         // While scanning: beams from the "observer" to each arriving vantage.
         const origin: LngLat = focus === "india" ? [78.9, 22.5] : [77.2, 28.6];
@@ -273,18 +265,20 @@ export default function DotGlobe({ vantages, statuses = {}, analysis, focus, sel
 
       // Vantage markers
       pts.length = 0;
+      const placed: { x: number; y: number; w: number; h: number }[] = [];
+      const markers = vantages.map((v) => pos[v.id]).filter((q) => q?.vis);
       for (const v of vantages) {
         const p = pos[v.id];
         if (!p?.vis) continue;
         pts.push({ id: v.id, x: p.x, y: p.y });
         const st = statuses[v.id];
-        const color = st === "error" ? "#ff4d6d" : colorOf(v.id);
+        const color = st === "error" ? "#a23b3b" : analysis?.ok ? colorOf(v.id) : "#1a1814";
         const isSel = selected === v.id || hover === v.id;
         if (!st || st === "pending") {
           const ph = ((now / 1000 + p.i * 0.17) % 1.4) / 1.4;
           ctx.beginPath();
           ctx.arc(p.x, p.y, 4 + ph * 18, 0, Math.PI * 2);
-          ctx.strokeStyle = `rgba(94,242,255,${(1 - ph) * 0.6 * (st ? 1 : 0.4)})`;
+          ctx.strokeStyle = `rgba(200,68,42,${(1 - ph) * 0.7 * (st ? 1 : 0.5)})`;
           ctx.lineWidth = 1.2;
           ctx.stroke();
         } else {
@@ -299,33 +293,42 @@ export default function DotGlobe({ vantages, statuses = {}, analysis, focus, sel
             ctx.globalAlpha = 1;
           }
         }
-        const r = isSel ? 6.5 : 4.2;
-        const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r * 4);
-        g.addColorStop(0, color);
-        g.addColorStop(1, "rgba(0,0,0,0)");
-        ctx.globalAlpha = 0.45;
-        ctx.fillStyle = g;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, r * 4, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.globalAlpha = 1;
+        const r = isSel ? 6.5 : 4.6;
         ctx.beginPath();
         ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
-        ctx.fillStyle = st === "ok" || st === "error" ? color : "#0b0d12";
+        ctx.fillStyle = st === "ok" || st === "error" ? color : "#fbf9f4";
         ctx.fill();
         ctx.strokeStyle = color;
         ctx.lineWidth = 1.5;
         ctx.stroke();
 
         if (!labels && !isSel) continue;
-        ctx.font = `${isSel ? 600 : 500} ${isSel ? 12 : 10.5}px "JetBrains Mono Variable", monospace`;
-        const label = isSel ? `${v.code} · ${v.label}` : v.code;
+        ctx.font = `${isSel ? 600 : 500} ${isSel ? 12.5 : 11.5}px "IBM Plex Sans", sans-serif`;
+        const label = v.label;
         const tw = ctx.measureText(label).width;
-        const lx = p.x + 9;
-        const ly = p.y - 9;
-        ctx.fillStyle = "rgba(6,7,10,0.72)";
-        ctx.fillRect(lx - 4, ly - 10, tw + 8, 15);
-        ctx.fillStyle = isSel ? "#fff" : "rgba(233,236,241,0.85)";
+        const spots: [number, number][] = [
+          [p.x + 9, p.y - 7],
+          [p.x - tw - 9, p.y - 7],
+          [p.x + 9, p.y + 13],
+          [p.x - tw - 9, p.y + 13],
+          [p.x - tw / 2, p.y - 14],
+          [p.x - tw / 2, p.y + 20],
+        ];
+        let spot: [number, number] | null = null;
+        for (const [lx, ly] of spots) {
+          const box = { x: lx - 3, y: ly - 11, w: tw + 6, h: 16 };
+          const hit = placed.some((b) => box.x < b.x + b.w && box.x + box.w > b.x && box.y < b.y + b.h && box.y + box.h > b.y) || markers.some((m) => m.x > box.x - 4 && m.x < box.x + box.w + 4 && m.y > box.y - 4 && m.y < box.y + box.h + 4 && !(m.x === p.x && m.y === p.y));
+          if (!hit) {
+            spot = [lx, ly];
+            placed.push(box);
+            break;
+          }
+        }
+        if (!spot && !isSel) continue;
+        const [lx, ly] = spot ?? spots[0];
+        ctx.fillStyle = "rgba(251,249,244,0.88)";
+        ctx.fillRect(lx - 3, ly - 11, tw + 6, 16);
+        ctx.fillStyle = isSel ? "#000" : "rgba(26,24,20,0.88)";
         ctx.fillText(label, lx, ly + 1);
       }
 
