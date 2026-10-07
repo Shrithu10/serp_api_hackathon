@@ -50,13 +50,19 @@ Filter bubbles are usually discussed for social feeds. **Search is the bigger an
 
 ![Every place](docs/every-place.jpg)
 
-**5. Compare two places.** Two result pages with lines linking the same page or the same website. Results only one side sees are flagged.
+**5. Page diff: compare two places.** Pick any two places and their first pages sit side by side, like a code diff for search results. A solid line joins the same page, a dashed line joins the same website with a different page, and anything only one side sees is marked *only here*. A one-line count sums it up, e.g. *“They share 3 identical links and 0 more websites with a different page. 2 results are only in Mumbai, 2 only in Kochi.”* It opens on the two places that differ most, and clicking a place on the map offers *Compare with the most different place*, which jumps here.
 
-**6. Google's AI answers.** Where an AI Overview appeared, its full text, and a grid of which sources it cited in each place.
+![Page diff](docs/page-diff.jpg)
 
-**7. Map and groups.** The places on a map, coloured by which ones see the same thing.
+**6. Rank rivers: how each website's rank moves.** A bump chart where every line is a website and every column is a place, ordered so similar places sit together. Follow a line to see a site hold #1 in some cities, slip, or drop off page one entirely. In the real “air pollution” results below, who.int leads New Delhi, Guwahati, Ahmedabad and Jaipur, then vanishes, while nasa.gov takes #1 from Pune to Lucknow. Hover a line to isolate it; the legend gives each site's type and the share of places that see it.
 
-**8. Deeper analysis (for researchers).** A similarity matrix, how each website's rank moves from place to place, the source mix (news / government / social / shops …), page features, unusually common words per place, and a Google Trends map of Indian states.
+![Rank rivers](docs/rank-rivers.jpg)
+
+**7. Google's AI answers.** Where an AI Overview appeared, its full text, and a grid of which sources it cited in each place.
+
+**8. Map and groups.** The places on a map, coloured by which ones see the same thing.
+
+**9. Deeper analysis (for researchers).** A similarity matrix, the rank rivers above, the source mix (news / government / social / shops …), page features, unusually common words per place, and a Google Trends map of Indian states.
 
 ### Four things worth showing a judge
 
@@ -74,7 +80,7 @@ Filter bubbles are usually discussed for social feeds. **Search is the bigger an
 
 **One-click sharing.** Under the AI answer diff and the top-3 finding there's a *Share this finding* row: post to X, share on LinkedIn, copy, or use the phone's share sheet. The text is written for you, for example *“Just 2 websites (nasa.gov and youtube.com) hold 36% of Google's top-3 spots for ‘air pollution’ across 12 places. Explored with Parallax + @SerpApi #BuiltWithSerpApi”*. Findings from demo data are tagged “[sample data]” so made-up numbers never travel as real ones.
 
-**Zero-friction start.** On first run Parallax builds six ready-made examples, so the start page shows the most divided one before you type anything. **🎲 Surprise me** opens one of the most divided examples instantly, at no cost. The examples are built from recorded SerpApi responses when you've recorded them (`python -m parallax record "<query>" --lens <lens>`, then `python -m parallax examples`), and otherwise from labelled sample data. Four of the six ship with real recorded Google results (one per lens, plus “air pollution”).
+**Zero-friction start.** On first run Parallax builds six ready-made examples, so the start page shows the most divided one before you type anything. **🎲 Surprise me** opens one of the most divided examples instantly, at no cost. The examples are built from recorded SerpApi responses when you've recorded them (`python -m parallax record "<query>" --lens <lens>`, then `python -m parallax examples`), and otherwise from labelled sample data. All six ship with real recorded Google results, so the examples work with no API key.
 
 ### Track a search over time
 
@@ -103,7 +109,7 @@ Runs happen while Parallax is running, and a missed run happens on the next star
 |---|---|---|---|
 | ![](docs/searching.jpg) | ![](docs/history.jpg) | ![](docs/share-card.jpg) | ![](docs/mobile.jpg) |
 
-<sub>Screenshots show real Google results fetched through SerpApi in October 2026 (“air pollution” across 12 cities, and “is india safe for tourists” from 10 countries for the AI answer diff). The Tracking screenshot uses the built-in sample history, since real tracking needs several days of runs.</sub>
+<sub>Screenshots show real Google results fetched through SerpApi in October 2026 (“air pollution” across 12 cities, including the page diff and rank rivers, and “is india safe for tourists” from 10 countries for the AI answer diff). The Tracking screenshot uses the built-in sample history, since real tracking needs several days of runs.</sub>
 
 ### Three ways to compare
 
