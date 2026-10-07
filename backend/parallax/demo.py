@@ -121,7 +121,7 @@ def _title(domain: str, q: str, rng: random.Random) -> str:
     return f"{base} - {site}"
 
 
-def google(params: dict) -> dict:
+def google(params: dict, salt: str = "") -> dict:
     q = params.get("q", "")
     loc = params.get("location", "")
     hl = params.get("hl", "en")
@@ -129,6 +129,8 @@ def google(params: dict) -> dict:
     city = _city(loc)
     topic = topic_of(q)
     rng = _seed("serp", q.lower(), loc, hl)
+    # A salted run (tracked searches) nudges rankings slightly, like real day-to-day drift.
+    drift = _seed("drift", q.lower(), loc, hl, salt) if salt else None
 
     pool: dict[str, float] = {}
     for d, w in _GLOBAL["general" if topic == "general" else topic]:
@@ -149,7 +151,7 @@ def google(params: dict) -> dict:
                 pool[d] *= 0.25
 
     noise = {"local": 3.2, "civic": 2.4, "shopping": 1.6, "health": 1.5, "tech": 1.7, "general": 1.8}[topic]
-    scored = sorted(((w + rng.gauss(0, noise), d) for d, w in pool.items()), reverse=True)[:10]
+    scored = sorted(((w + rng.gauss(0, noise) + (drift.gauss(0, noise * 0.12) if drift else 0), d) for d, w in pool.items()), reverse=True)[:10]
 
     organic = []
     for i, (_, d) in enumerate(scored):
@@ -239,9 +241,9 @@ _STATES = [
 ]
 
 
-def trends(params: dict) -> dict:
+def trends(params: dict, salt: str = "") -> dict:
     q = params.get("q", "")
-    rng = _seed("trends", q.lower(), params.get("data_type", ""))
+    rng = _seed("trends", q.lower(), params.get("data_type", ""), salt)
     if params.get("data_type") == "GEO_MAP_0":
         hot = set(rng.sample([c for c, _ in _STATES], 5))
         rows = []

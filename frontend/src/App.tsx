@@ -30,6 +30,8 @@ import Help from "./components/Help";
 import AiDiff from "./components/AiDiff";
 import Concentration from "./components/Concentration";
 import CostReceipt from "./components/CostReceipt";
+import Tracking from "./components/Tracking";
+import TrackDialog from "./components/TrackDialog";
 
 const LENS_NAME: Record<string, string> = { cities: "Indian cities", languages: "Indian languages", world: "India vs world" };
 
@@ -77,6 +79,7 @@ export default function App() {
   const [copied, setCopied] = useState(false);
   const [prev, setPrev] = useState<{ payload: ScanPayload; created_at: number } | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [track, setTrack] = useState(false);
   const { state, start, load, reset } = useScan();
 
   const refreshAccount = useCallback(() => {
@@ -193,7 +196,7 @@ export default function App() {
     writeRoute(next, true);
   };
 
-  const go = (page: "home" | "history") => {
+  const go = (page: "home" | "history" | "tracking") => {
     if (page === "home") reset();
     const next: Route = { page };
     setRoute(next);
@@ -229,9 +232,20 @@ export default function App() {
 
   return (
     <div className="min-h-screen">
-      <Header config={config} creditsLeft={creditsLeft} page={route.page === "history" ? "history" : route.page === "home" || !showResults ? "home" : "scan"} go={go} onSetup={() => setSetup(true)} />
+      <Header config={config} creditsLeft={creditsLeft} page={route.page === "history" || route.page === "tracking" ? route.page : route.page === "home" || !showResults ? "home" : "scan"} go={go} onSetup={() => setSetup(true)} />
 
-      {route.page === "history" ? (
+      {route.page === "tracking" ? (
+        <Tracking
+          selected={route.watch}
+          live={!!config?.live}
+          onSelect={(id) => {
+            const next: Route = { page: "tracking", watch: id };
+            setRoute(next);
+            writeRoute(next);
+          }}
+          onOpenScan={(id) => openScan(id)}
+        />
+      ) : route.page === "history" ? (
         <History onOpen={(id) => openScan(id)} />
       ) : notFound ? (
         <div className="mx-auto max-w-xl px-5 py-24 text-center">
@@ -264,6 +278,11 @@ export default function App() {
               {!scanning && (
                 <div className="no-print flex flex-wrap items-center gap-2">
                   <button onClick={() => setEditing(!editing)} className="btn btn-ghost">{editing ? "Close" : "Change search"}</button>
+                  {state.id && !state.example && (
+                    <button onClick={() => setTrack(true)} className="btn btn-ghost" title="Re-run this search automatically and see how it changes">
+                      Track this search
+                    </button>
+                  )}
                   <button onClick={copyLink} className="btn btn-ghost" disabled={!state.id}>{copied ? "Link copied" : "Copy link"}</button>
                   {a && <ExportMenu actions={exportActions} />}
                 </div>
@@ -464,6 +483,25 @@ export default function App() {
         </div>
       </footer>
 
+      {track && (
+        <TrackDialog
+          query={state.query}
+          lens={state.lens}
+          vantages={state.vantages}
+          wording={opts?.wording}
+          scanId={state.id}
+          live={!!config?.live}
+          creditsLeft={creditsLeft}
+          onClose={() => setTrack(false)}
+          onCreated={(wid) => {
+            setTrack(false);
+            const next: Route = { page: "tracking", watch: wid };
+            setRoute(next);
+            writeRoute(next);
+            window.scrollTo({ top: 0 });
+          }}
+        />
+      )}
       <AnimatePresence>{share && a && <ShareCard analysis={a} lens={state.lens} vmap={vmap} onClose={() => setShare(false)} />}</AnimatePresence>
       {setup && config && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-ink/40 p-4" onClick={() => setSetup(false)}>

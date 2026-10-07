@@ -141,3 +141,47 @@ def test_language_wording():
     assert custom["ta-chennai"] == "சிறந்த மாம்பழ வகை"  # typed wording wins
     assert custom["hi-lucknow"] == "best mango variety"  # blank falls back to the original
     assert resolve(q, CITIES) == {v.id: q for v in CITIES}  # cities lens never rewrites
+
+
+def test_tracking_runs_and_seed(tmp_path, monkeypatch):
+    from parallax import storage, tracking
+    from parallax.serp import SerpGateway
+
+    monkeypatch.setattr(storage, "DB_PATH", tmp_path / "w.db")
+    wid = storage.create_watch("air pollution", "cities", {"vantage_ids": ["mumbai", "delhi", "chennai"]}, 24)
+    assert [w["id"] for w in storage.due_watches()] == [wid]
+    w = storage.get_watch(wid)
+    sid = asyncio.run(tracking.run_watch(w, gw=SerpGateway(offline=True, latency=False, salt="a")))
+    w = storage.get_watch(wid)
+    assert w["runs"] == 1 and w["next_run"] > w["last_run"] and storage.due_watches() == []
+    runs = storage.watch_runs(wid)
+    assert [r["id"] for r in runs] == [sid] and set(runs[0]["summary"]["top1_by_place"]) == {"mumbai", "delhi", "chennai"}
+    assert storage.list_scans() == []  # tracking runs stay out of personal history
+    assert tracking.estimate_requests(w["config"], w["lens"]) == 5
+
+    ex = asyncio.run(tracking.seed_example(days=3))
+    assert len(storage.watch_runs(ex)) == 3 and not storage.get_watch(ex)["active"]
+    assert asyncio.run(tracking.seed_example()) is None  # only once
+    assert storage.delete_watch(wid) and storage.watch_runs(wid) == []
+
+
+def test_locations_check(monkeypatch):
+    import serpapi
+    from parallax import locations_check
+
+    class Fake:
+        def __init__(self, **kw):
+            pass
+
+        def locations(self, q, limit):
+            if q == "Guwahati":
+                return [{"canonical_name": "Guwahati,Assam,India"}]
+            if q == "Mumbai":
+                raise RuntimeError("offline")
+            return [{"canonical_name": "Somewhere Else,India"}]
+
+    monkeypatch.setattr(serpapi, "Client", Fake)
+    rows = {r["location"]: r for r in locations_check.check_locations()}
+    assert rows["Guwahati, Assam, India"]["ok"] is True  # spaces after commas don't matter
+    assert rows["Mumbai, Maharashtra, India"]["ok"] is None  # network error is reported, not guessed
+    assert rows["Pune, Maharashtra, India"]["ok"] is False and rows["Pune, Maharashtra, India"]["suggestion"] == "Somewhere Else,India"

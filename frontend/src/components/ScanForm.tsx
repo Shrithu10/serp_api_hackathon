@@ -129,6 +129,14 @@ export default function ScanForm({ config, initial, creditsLeft, compact, onSubm
   const [wording, setWording] = useState<Record<string, string>>({});
   const [edited, setEdited] = useState<Set<string>>(new Set());
   const [showWording, setShowWording] = useState(false);
+  const [known, setKnown] = useState<string[]>([]);
+  useEffect(() => {
+    if (lensId !== "languages" || known.length) return;
+    fetch("/api/translations/known")
+      .then((r) => r.json())
+      .then(setKnown)
+      .catch(() => {});
+  }, [lensId, known.length]);
 
   // Language mode: pre-fill each language's wording from the built-in list (never overwriting what you typed).
   useEffect(() => {
@@ -254,6 +262,16 @@ export default function ScanForm({ config, initial, creditsLeft, compact, onSubm
               <p className="mt-1 text-[13px] text-muted">
                 {filled ? "Some languages still use your original words." : "No built-in wording for this search yet."} Open this to type each language's version.
               </p>
+            )}
+            {filled === 0 && known.length > 0 && (
+              <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[13px]">
+                <span className="text-muted">Ready in all 9 languages:</span>
+                {known.map((k) => (
+                  <button key={k} type="button" onClick={() => setQuery(k)} className="chip py-0.5 hover:border-ink">
+                    {k}
+                  </button>
+                ))}
+              </div>
             )}
             {showWording && (
               <div className="mt-3 grid gap-2 sm:grid-cols-2">

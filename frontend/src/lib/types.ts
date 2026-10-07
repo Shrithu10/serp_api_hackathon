@@ -203,6 +203,24 @@ export interface SavedScan {
   query: string;
   lens: string;
   live: boolean;
-  summary: { places: number; score: number; verdict: string; groups: number; avg_differ: number; top1: string; synthetic: boolean; example?: boolean; top2_share?: number };
+  summary: { places: number; score: number; verdict: string; groups: number; avg_differ: number; top1: string; synthetic: boolean; example?: boolean; top2_share?: number; ai_count?: number; credits?: number; top1_by_place?: Record<string, string>; watch?: string | null };
   payload?: ScanPayload;
+}
+
+export interface Watch {
+  id: string;
+  created_at: number;
+  query: string;
+  lens: string;
+  config: { vantage_ids?: string[]; custom?: Partial<Vantage>[]; wording?: Record<string, string> };
+  interval_h: number;
+  active: boolean;
+  example: boolean;
+  last_run: number | null;
+  next_run: number | null;
+  runs: number;
+  last_error: string | null;
+  requests_per_run: number;
+  vantages: Vantage[];
+  history: SavedScan[];
 }

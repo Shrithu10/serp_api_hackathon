@@ -1,7 +1,7 @@
 """Parallax command line.
 
     python -m parallax               start the web app (http://localhost:8000)
-    python -m parallax check         run the startup checks only
+    python -m parallax check         run the startup checks only (add --live to verify place names)
     python -m parallax mcp           run the MCP tool server (stdio) for AI agents
     python -m parallax examples      rebuild the ready-made example scans
     python -m parallax record "q"    record real SerpApi responses (see record.py)
@@ -126,6 +126,7 @@ def main() -> None:
     ap.add_argument("--port", type=int, default=int(os.getenv("PORT", 8000)))
     ap.add_argument("--reload", action="store_true", help="auto-reload on code changes (development)")
     ap.add_argument("--quiet", action="store_true", help="skip the banner")
+    ap.add_argument("--live", action="store_true", help="with `check`: also verify every place name with SerpApi's free Locations API")
     args = ap.parse_args()
 
     if args.command == "mcp":
@@ -159,6 +160,25 @@ def main() -> None:
 
     healthy = checks(out)
     if args.command == "check":
+        if args.live:
+            from .locations_check import check_locations
+
+            out.line()
+            out.line("  Checking place names with the SerpApi Locations API (free, no credits)…")
+            rows = check_locations()
+            if rows and all(r["ok"] is None for r in rows):
+                out.warn(f"Could not reach SerpApi ({rows[0]['error']}). Check your internet connection and try again.")
+                sys.exit(1)
+            for r in rows:
+                if r["ok"]:
+                    out.ok(r["location"])
+                elif r["ok"] is None:
+                    out.warn(f"{r['location']}: could not check ({r['error']})")
+                else:
+                    healthy = False
+                    out.bad(f"{r['location']}: not recognised" + (f" → try “{r['suggestion']}” in vantages.py" if r["suggestion"] else ""))
+            good = sum(1 for r in rows if r["ok"])
+            out.line(f"  {good}/{len(rows)} place names recognised by Google.")
         sys.exit(0 if healthy else 1)
 
     url = f"http://{'localhost' if args.host in ('127.0.0.1', '0.0.0.0') else args.host}:{args.port}"

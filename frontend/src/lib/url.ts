@@ -1,10 +1,11 @@
 export interface Route {
-  page: "home" | "scan" | "history" | "about";
+  page: "home" | "scan" | "history" | "about" | "tracking";
   q?: string;
   lens?: string;
   scan?: string;
   home?: string;
   site?: string;
+  watch?: string;
 }
 
 export function readRoute(): Route {
@@ -17,12 +18,14 @@ export function readRoute(): Route {
     scan: p.get("scan") ?? undefined,
     home: p.get("home") ?? undefined,
     site: p.get("site") ?? undefined,
+    watch: p.get("watch") ?? undefined,
   };
 }
 
 export function writeRoute(r: Route, replace = false) {
   const p = new URLSearchParams();
-  if (r.page === "history" || r.page === "about") p.set("page", r.page);
+  if (r.page === "history" || r.page === "about" || r.page === "tracking") p.set("page", r.page);
+  if (r.page === "tracking" && r.watch) p.set("watch", r.watch);
   if (r.scan) p.set("scan", r.scan);
   else if (r.q) {
     p.set("q", r.q);

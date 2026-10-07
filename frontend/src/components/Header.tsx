@@ -13,12 +13,12 @@ interface Props {
   config: Config | null;
   creditsLeft: number | null;
   page: string;
-  go: (page: "home" | "history") => void;
+  go: (page: "home" | "history" | "tracking") => void;
   onSetup: () => void;
 }
 
 export default function Header({ config, creditsLeft, page, go, onSetup }: Props) {
-  const link = (p: "home" | "history", label: string) => (
+  const link = (p: "home" | "history" | "tracking", label: string) => (
     <button onClick={() => go(p)} className={`whitespace-nowrap px-1 py-1 text-[14px] ${page === p ? "font-semibold text-ink" : "text-ink-2 hover:text-ink"}`}>
       {label}
     </button>
@@ -33,6 +33,7 @@ export default function Header({ config, creditsLeft, page, go, onSetup }: Props
         <nav className="flex items-center gap-2 sm:ml-2 sm:gap-3">
           {link("home", "New search")}
           {link("history", "History")}
+          {link("tracking", "Tracking")}
         </nav>
         <div className="ml-auto flex items-center gap-3 text-[13px]">
           {config && (

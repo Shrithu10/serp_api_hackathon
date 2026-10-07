@@ -76,6 +76,18 @@ Filter bubbles are usually discussed for social feeds. **Search is the bigger an
 
 **Zero-friction start.** On first run Parallax builds six ready-made examples, so the start page shows the most divided one before you type anything. **🎲 Surprise me** opens one of the most divided examples instantly, at no cost. The examples are built from recorded SerpApi responses when you've recorded them (`python -m parallax.record "<query>"`, then `python -m parallax.examples`), and otherwise from labelled sample data.
 
+### Track a search over time
+
+Rankings shift as news breaks and sites compete, so one snapshot only tells part of the story. Press **Track this search** on any results page to re-run it automatically every day, every 3 days or every week. Before you confirm, Parallax shows what it will cost (e.g. *“≈ 60 searches a month”*) against the credits you have left. The **Tracking** page then shows:
+
+- how the difference score, links-that-differ and top-3 concentration move over time;
+- a run-by-run grid of each place's **#1 result**, with changes highlighted;
+- every run, reopenable as a full results page, plus total credits billed.
+
+Runs happen while Parallax is running, and a missed run happens on the next start. A ready-made tracked example with a week of sample history is included, so the page is never empty.
+
+![Tracking](docs/tracking.jpg)
+
 ### Built to be used, not just looked at
 
 - **History.** Every search is saved locally. Reopening one is instant and uses no SerpApi searches.
@@ -194,7 +206,7 @@ $ cd backend && python -m parallax
   ✓ Disk cache ready: 41 saved responses, reused for 6 h (repeat searches cost 0 credits)
   ✓ History database ready: 7 saved searches, 6 ready-made examples (parallax.db)
   ✓ 32 vantage points across 3 lenses (cities · languages · world)
-  ✓ Language mode: built-in wording for 6 common searches in 9 Indian languages, plus your own
+  ✓ Language mode: built-in wording for 14 common searches in 9 Indian languages, plus your own
   ✓ Web interface built
   ✓ MCP tool server available: `python -m parallax mcp` (tools: parallax_scan, parallax_lenses)
 
@@ -207,6 +219,7 @@ Every line is a real startup check: missing keys show as warnings, and broken se
 |---|---|
 | `python -m parallax` | Start the web app (`--port`, `--host`, `--reload`, `--quiet`) |
 | `python -m parallax check` | Run the startup checks only (exit code 1 if something is broken) |
+| `python -m parallax check --live` | Also verify every built-in place name with SerpApi's free Locations API, before spending credits |
 | `python -m parallax mcp` | Run the MCP tool server on stdio for AI agents |
 | `python -m parallax record "query" --lens cities` | Record real SerpApi responses for offline demos |
 | `python -m parallax examples` | Rebuild the ready-made example scans |
@@ -261,7 +274,9 @@ backend/parallax/
   analysis.py     RBO, clustering, log-odds, taxonomy, AI-overview overlap
   brief.py        plain-language summary generated from the numbers
   translations.py native-script wording for common searches (language lens)
-  storage.py      saved searches (SQLite), previous-run lookup for change tracking
+  storage.py      saved searches and tracked searches (SQLite)
+  tracking.py     scheduled re-runs of tracked searches
+  locations_check.py  verify place names with the Locations API
   mcp_server.py   MCP tools for agents
   record.py       record real responses as replayable fixtures
   demo.py         labelled synthetic data for keyless exploration

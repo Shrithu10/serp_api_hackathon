@@ -14,10 +14,8 @@ from __future__ import annotations
 import asyncio
 
 from . import storage
-from .brief import _offline
-from .engine import run_scan, trends_for
+from .engine import full_scan
 from .serp import SerpGateway
-from .translations import resolve
 from .vantages import LENSES
 
 EXAMPLES = [
@@ -34,25 +32,22 @@ async def build(replace: bool = False) -> list[str]:
     if replace:
         for s in storage.list_examples():
             storage.delete(s["id"])
+        for w in storage.list_watches():
+            if w["example"]:
+                storage.delete_watch(w["id"])
     have = {(s["query"], s["lens"]) for s in storage.list_examples()}
     gw = SerpGateway(offline=True, latency=False)
     ids = []
     for q, lens in EXAMPLES:
         if (q, lens) in have:
             continue
-        vantages = LENSES[lens].vantages
-        results, analysis = await run_scan(q, vantages, gw=gw)
-        if not analysis.get("ok"):
+        payload = await full_scan(q, lens, LENSES[lens].vantages, gw=gw)
+        if not payload["analysis"].get("ok"):
             continue
-        tr = await trends_for(q, gw=gw)
-        origins = tr.pop("calls", []) + [c for r in results.values() for c in r["calls"]]
-        vdicts = [v.to_dict() for v in vantages]
-        text = "".join([c async for c in _offline(analysis, vdicts)]) if analysis.get("ok") else ""
-        done = {"elapsed": 0, "credits": 0, "cached": 0, "requests": len(origins), "synthetic": "synthetic" in origins, "recorded": origins.count("recorded")}
-        ids.append(storage.save(q, lens, False, {
-            "query": q, "lens": lens, "vantages": vdicts, "queries": resolve(q, vantages), "results": results,
-            "errors": {}, "analysis": analysis, "trends": tr, "brief": text, "done": done,
-        }, example=True))
+        ids.append(storage.save(q, lens, False, payload, example=True))
+    from .tracking import seed_example
+
+    await seed_example()
     return ids
 
 

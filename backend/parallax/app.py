@@ -17,6 +17,7 @@ from fastapi import FastAPI, HTTPException, Query  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse  # noqa: E402
 from fastapi.staticfiles import StaticFiles  # noqa: E402
+from pydantic import BaseModel, Field  # noqa: E402
 
 from . import brief, storage, translations  # noqa: E402
 from .analysis import analyze  # noqa: E402
@@ -74,12 +75,108 @@ async def _seed_examples():
     from .examples import build
 
     asyncio.create_task(build())
+    # Re-run tracked searches when they come due.
+    from .tracking import scheduler
+
+    asyncio.create_task(scheduler())
+
+
+@app.get("/api/translations/known")
+async def translations_known():
+    """Searches that have built-in wording in every Indian language."""
+    return sorted(translations.BUILTIN)
 
 
 @app.get("/api/translations")
 async def translations_for(q: str = Query("", max_length=200)):
     """Built-in native-script wording for a search, used to pre-fill the form."""
     return translations.lookup(q)
+
+
+class WatchIn(BaseModel):
+    query: str = Field(min_length=1, max_length=200)
+    lens: str = "cities"
+    vantage_ids: list[str] = []
+    custom: list[dict] = []
+    wording: dict[str, str] = {}
+    interval_h: float = Field(24, ge=1, le=24 * 31)
+    scan_id: str | None = None  # an existing scan to count as the first run
+
+
+def _watch_out(w: dict, with_runs: bool = True) -> dict:
+    from .tracking import estimate_requests, vantages_for
+
+    out = dict(w)
+    out["requests_per_run"] = estimate_requests(w["config"], w["lens"])
+    out["vantages"] = [v.to_dict() for v in vantages_for(w["config"], w["lens"])]
+    if with_runs:
+        out["history"] = storage.watch_runs(w["id"])
+    return out
+
+
+@app.get("/api/watches")
+async def watches_list():
+    return [_watch_out(w) for w in storage.list_watches()]
+
+
+@app.post("/api/watches")
+async def watches_create(body: WatchIn):
+    if body.lens not in LENSES:
+        raise HTTPException(400, "Unknown lens")
+    config = {"vantage_ids": body.vantage_ids, "custom": body.custom, "wording": body.wording}
+    now = time.time()
+    first = storage.get(body.scan_id) if body.scan_id else None
+    wid = storage.create_watch(body.query.strip(), body.lens, config, body.interval_h, next_run=now + body.interval_h * 3600 if first else now)
+    if first:
+        storage.attach_to_watch(body.scan_id, wid)
+        storage.update_watch(wid, runs=1, last_run=first["created_at"])
+    return _watch_out(storage.get_watch(wid))
+
+
+@app.get("/api/watches/{wid}")
+async def watches_get(wid: str):
+    w = storage.get_watch(wid)
+    if not w:
+        raise HTTPException(404, "Tracked search not found")
+    return _watch_out(w)
+
+
+class WatchPatch(BaseModel):
+    active: bool | None = None
+    interval_h: float | None = Field(None, ge=1, le=24 * 31)
+
+
+@app.patch("/api/watches/{wid}")
+async def watches_patch(wid: str, body: WatchPatch):
+    w = storage.get_watch(wid)
+    if not w:
+        raise HTTPException(404, "Tracked search not found")
+    fields: dict = {}
+    if body.interval_h is not None:
+        fields["interval_h"] = body.interval_h
+    if body.active is not None:
+        fields["active"] = body.active
+        if body.active:
+            # Resuming: next run one interval after the last one (or now if overdue).
+            fields["next_run"] = max(time.time(), (w["last_run"] or 0) + (body.interval_h or w["interval_h"]) * 3600)
+    storage.update_watch(wid, **fields)
+    return _watch_out(storage.get_watch(wid))
+
+
+@app.post("/api/watches/{wid}/run")
+async def watches_run(wid: str):
+    from .tracking import run_watch
+
+    w = storage.get_watch(wid)
+    if not w:
+        raise HTTPException(404, "Tracked search not found")
+    sid = await run_watch(w)
+    return {"scan_id": sid, "watch": _watch_out(storage.get_watch(wid))}
+
+
+@app.delete("/api/watches/{wid}")
+async def watches_delete(wid: str):
+    return {"deleted": storage.delete_watch(wid)}
 
 
 @app.get("/api/examples")

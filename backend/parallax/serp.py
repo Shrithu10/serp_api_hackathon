@@ -26,7 +26,9 @@ def _key(params: dict) -> str:
 
 
 class SerpGateway:
-    def __init__(self, api_key: str | None = None, offline: bool = False, latency: bool = True):
+    def __init__(self, api_key: str | None = None, offline: bool = False, latency: bool = True, salt: str = ""):
+        # salt varies demo samples between runs (used for tracked searches); real data is unaffected.
+        self.salt = salt
         self.api_key = None if offline else api_key or os.getenv("SERPAPI_API_KEY") or os.getenv("SERPAPI_KEY")
         self.latency = latency
         self.client = serpapi.Client(api_key=self.api_key, timeout=45) if self.api_key else None
@@ -80,10 +82,10 @@ class SerpGateway:
             await asyncio.sleep(0.35 + (int(key[:4], 16) % 1400) / 1000)
         engine = params.get("engine")
         if engine == "google_trends":
-            return demo.trends(params), "synthetic"
+            return demo.trends(params, self.salt), "synthetic"
         if engine == "google_ai_overview":
             return {"ai_overview": {"error": "demo"}}, "synthetic"
-        return demo.google(params), "synthetic"
+        return demo.google(params, self.salt), "synthetic"
 
     def _live_search(self, params: dict) -> dict:
         try:
