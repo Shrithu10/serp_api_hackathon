@@ -39,7 +39,7 @@ export default function History({ onOpen }: { onOpen: (id: string) => void }) {
             <button onClick={() => onOpen(s.id)} className="min-w-0 text-left">
               <div className="truncate font-serif text-[20px] font-semibold hover:underline">“{s.query}”</div>
               <div className="text-[13px] text-muted">
-                {LENS[s.lens] ?? s.lens} · {s.summary.places} places{!s.live || s.summary.synthetic ? " · demo data" : ""}
+                {LENS[s.lens] ?? s.lens} · {s.summary.places} places{s.summary.synthetic ? " · demo data" : ""}
               </div>
             </button>
             <div className="hidden text-[13.5px] text-ink-2 sm:block">

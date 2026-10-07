@@ -163,6 +163,8 @@ export default function App() {
   }, [state.status, state.id]);
 
   const a = state.analysis?.ok ? state.analysis : null;
+  // Recorded responses replayed without a key are real Google data, not demo samples.
+  const source = state.live ? "live Google results" : state.done && !state.done.synthetic ? "recorded Google results" : "demo data";
   const vmap = useMemo(() => Object.fromEntries(state.vantages.map((v) => [v.id, v])), [state.vantages]);
   const ids = a?.order ?? [];
   const homeId = home && ids.includes(home) ? home : ids[0] ?? "";
@@ -209,7 +211,7 @@ export default function App() {
   const base = `parallax-${slug(state.query)}`;
   const exportActions = {
     csv: () => download(`${base}.csv`, toCSV(state.query, state.vantages, state.results), "text/csv"),
-    md: () => a && download(`${base}.md`, toMarkdown({ query: state.query, vantages: state.vantages, results: state.results, analysis: a, brief: state.brief, live: state.live, when }), "text/markdown"),
+    md: () => a && download(`${base}.md`, toMarkdown({ query: state.query, vantages: state.vantages, results: state.results, analysis: a, brief: state.brief, source, when }), "text/markdown"),
     json: () =>
       download(
         `${base}.json`,
@@ -262,7 +264,7 @@ export default function App() {
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="min-w-0">
                 <div className="text-[13.5px] text-muted">
-                  {LENS_NAME[state.lens] ?? state.lens} · {state.vantages.length} places · {state.live ? "live Google results" : "demo data"}
+                  {LENS_NAME[state.lens] ?? state.lens} · {state.vantages.length} places · {source}
                   {state.savedAt && !scanning ? ` · ${timeAgo(state.savedAt)}` : ""}
                   {state.done && !scanning && (
                     <>

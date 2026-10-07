@@ -19,7 +19,7 @@ async def _offline(analysis: dict, vantages: list[dict]) -> AsyncIterator[str]:
     p = analysis.get("plain") or {}
     ms, md = analysis["most_similar"], analysis["most_different"]
     groups = len(analysis["clusters"])
-    differ, length = p.get("avg_differ", 0), p.get("avg_len", 10)
+    differ, length = p.get("avg_differ", 0), round(p.get("avg_len", 10))
     if differ <= 2:
         head = "Mostly no: people in different places see nearly the same results for this."
     elif differ <= 5:

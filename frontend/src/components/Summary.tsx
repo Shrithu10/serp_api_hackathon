@@ -64,7 +64,7 @@ export default function Summary({ a, lens, vmap, brief, streaming, changes, prev
       big: (
         <>
           {p.avg_differ}
-          <span className="text-[22px] font-normal text-muted"> of {p.avg_len}</span>
+          <span className="text-[22px] font-normal text-muted"> of {Math.round(p.avg_len)}</span>
         </>
       ),
       label: "top links differ between any two places",

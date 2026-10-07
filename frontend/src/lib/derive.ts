@@ -132,14 +132,14 @@ export function toCSV(query: string, vantages: Vantage[], results: Record<string
   return rows.join("\n");
 }
 
-export function toMarkdown(p: { query: string; vantages: Vantage[]; results: Record<string, VantageResult>; analysis: Analysis; brief: string; live: boolean; when: Date }) {
+export function toMarkdown(p: { query: string; vantages: Vantage[]; results: Record<string, VantageResult>; analysis: Analysis; brief: string; source: string; when: Date }) {
   const vmap = Object.fromEntries(p.vantages.map((v) => [v.id, v]));
   const a = p.analysis;
   const L: string[] = [];
   L.push(`# PARALLAX report: "${p.query}"`, "");
-  L.push(`_${p.when.toLocaleString()} · ${p.vantages.length} places · ${p.live ? "live Google results via SerpApi" : "demo data"}_`, "");
+  L.push(`_${p.when.toLocaleString()} · ${p.vantages.length} places · ${p.source === "demo data" ? p.source : `${p.source} via SerpApi`}_`, "");
   L.push("## In short", "");
-  L.push(`- On average **${a.plain.avg_differ} of the top ${a.plain.avg_len} links** differ between two places.`);
+  L.push(`- On average **${a.plain.avg_differ} of the top ${Math.round(a.plain.avg_len)} links** differ between two places.`);
   L.push(`- The #1 result (**${a.plain.top1_domain}**) is the same in ${a.plain.top1_agree} of ${a.plain.places} places.`);
   L.push(`- Places fall into **${a.plain.groups} groups** that see similar results.`);
   L.push(`- Most different: ${vmap[a.most_different.a]?.label} vs ${vmap[a.most_different.b]?.label}. Most alike: ${vmap[a.most_similar.a]?.label} and ${vmap[a.most_similar.b]?.label}.`);

@@ -110,7 +110,7 @@ export default function SiteReport({ site, setSite, ids, vmap, results, suggesti
                       <div className="relative h-2 flex-1 rounded-full bg-paper-2">
                         {r.rank != null && <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${((11 - r.rank) / 10) * 100}%`, background: rankColor(r.rank) }} />}
                       </div>
-                      <span className="num w-14 text-right" style={{ color: rankColor(r.rank) }}>{r.rank ? `#${r.rank}` : "not found"}</span>
+                      <span className="num w-20 whitespace-nowrap text-right" style={{ color: rankColor(r.rank) }}>{r.rank ? `#${r.rank}` : "not found"}</span>
                     </div>
                   </td>
                   <td className="py-2.5 text-[13px] text-ink-2">

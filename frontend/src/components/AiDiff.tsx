@@ -50,7 +50,7 @@ export default function AiDiff({ a, vmap, results, sample }: { a: Analysis; vmap
     <div>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <p className="max-w-2xl font-serif text-[21px] leading-snug">
-          Asked the same thing, Google's AI in <b>{vmap[x]?.label}</b> and <b>{vmap[y]?.label}</b> uses the same wording for only{" "}
+          Asked the same thing, Google's AI in <b>{vmap[x]?.label}</b> and <b>{vmap[y]?.label}</b> uses the same wording for {pct < 90 ? "only " : ""}
           <span className="mark">{pct}%</span> of its answer.
           <Help wide>
             Word-by-word comparison of the two AI Overview texts (longest common sequence of words). Highlighted words appear in one answer but not the other. Different wording isn't automatically a different claim, so read the highlights.
