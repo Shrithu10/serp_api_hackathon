@@ -23,7 +23,7 @@ _TOPICS = {
     "local": ["near me", "restaurant", "biryani", "cafe", "hospital", "food", "street", "things to do", "places", "hotel", "weekend"],
     "health": ["ayurveda", "diabetes", "symptoms", "cure", "diet", "yoga", "dengue", "covid", "health", "vitamin", "medicine", "ozempic"],
     "civic": ["election", "minister", "policy", "protest", "budget", "law", "government", "court", "tax", "upi", "aadhaar", "war", "border"],
-    "tech": ["ai", "chatgpt", "claude", "startup", "coding", "python", "job", "salary", "layoffs", "gpu"],
+    "tech": ["ai", "chatgpt", "startup", "coding", "python", "job", "salary", "layoffs", "gpu"],
 }
 
 _GLOBAL = {
