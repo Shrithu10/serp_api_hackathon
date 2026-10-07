@@ -203,7 +203,7 @@ export interface SavedScan {
   query: string;
   lens: string;
   live: boolean;
-  summary: { places: number; score: number; verdict: string; groups: number; avg_differ: number; top1: string; synthetic: boolean; example?: boolean; top2_share?: number; ai_count?: number; credits?: number; top1_by_place?: Record<string, string>; watch?: string | null };
+  summary: { places: number; score: number; verdict: string; groups: number; avg_differ: number; avg_len?: number; top1: string; synthetic: boolean; example?: boolean; top2_share?: number; ai_count?: number; credits?: number; top1_by_place?: Record<string, string>; watch?: string | null };
   payload?: ScanPayload;
 }
 

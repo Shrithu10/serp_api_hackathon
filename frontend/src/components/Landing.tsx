@@ -119,7 +119,7 @@ export default function Landing({ config, creditsLeft, onScan, onOpen }: Props) 
               <div className="text-[12.5px] font-semibold text-accent">Most divided example{featured.summary.synthetic ? " · sample data" : ""}</div>
               <div className="mt-1 font-serif text-[22px] font-semibold leading-tight">“{featured.query}”</div>
               <div className="mt-1.5 text-[14px] text-ink-2">
-                <b className="num">{featured.summary.avg_differ}</b> of 10 top links differ between two places · {featured.summary.groups} groups
+                <b className="num">{featured.summary.avg_differ}</b> of {Math.round(featured.summary.avg_len ?? 10)} top links differ between two places · {featured.summary.groups} groups
                 {featured.summary.top2_share != null && <> · 2 sites hold <b className="num">{Math.round(featured.summary.top2_share * 100)}%</b> of the top spots</>}
               </div>
               <div className="mt-2 text-[13.5px] underline decoration-rule-2 underline-offset-4 group-hover:decoration-ink">Open it →</div>

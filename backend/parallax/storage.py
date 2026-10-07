@@ -61,6 +61,7 @@ def save(query: str, lens: str, live: bool, payload: dict, example: bool = False
         "verdict": a.get("verdict"),
         "groups": len(a.get("clusters") or []),
         "avg_differ": plain.get("avg_differ"),
+        "avg_len": plain.get("avg_len"),
         "top1": plain.get("top1_domain"),
         "synthetic": (payload.get("done") or {}).get("synthetic", False),
         "example": example,

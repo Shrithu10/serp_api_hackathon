@@ -43,7 +43,7 @@ export default function History({ onOpen }: { onOpen: (id: string) => void }) {
               </div>
             </button>
             <div className="hidden text-[13.5px] text-ink-2 sm:block">
-              {s.summary.avg_differ != null ? <><b className="num">{s.summary.avg_differ}</b> of 10 links differ</> : "—"}
+              {s.summary.avg_differ != null ? <><b className="num">{s.summary.avg_differ}</b> of {Math.round(s.summary.avg_len ?? 10)} links differ</> : "—"}
               {s.summary.top1 && <div className="truncate text-[12.5px] text-muted">#1 mostly {s.summary.top1}</div>}
             </div>
             <div className="hidden text-[13px] text-muted sm:block">{timeAgo(s.created_at)}</div>
