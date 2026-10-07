@@ -71,6 +71,9 @@ async def trends_for(q: str, gw: SerpGateway | None = None) -> dict:
 
 async def run_scan(q: str, vantages: list[Vantage], follow_ai: bool = True, gw: SerpGateway | None = None) -> tuple[dict[str, dict], dict]:
     """Run a complete scan (no streaming). Returns (results, analysis)."""
-    outs = await asyncio.gather(*(search_vantage(v, q, follow_ai, gw) for v in vantages), return_exceptions=True)
+    from .translations import resolve
+
+    queries = resolve(q, vantages)
+    outs = await asyncio.gather(*(search_vantage(v, queries[v.id], follow_ai, gw) for v in vantages), return_exceptions=True)
     results = {v.id: r for v, r in zip(vantages, outs) if isinstance(r, dict)}
     return results, analyze(q, [v.to_dict() for v in vantages], results)

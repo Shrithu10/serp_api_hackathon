@@ -63,7 +63,7 @@ def banner(out: Out) -> None:
 def checks(out: Out) -> bool:
     """Real startup checks. Returns False only for problems that stop the app working."""
     healthy = True
-    from . import brief, storage
+    from . import storage
     from .serp import CACHE_DIR, CACHE_TTL, FIXTURE_DIR, SerpGateway
     from .vantages import ALL_VANTAGES, LENSES
 
@@ -98,10 +98,9 @@ def checks(out: Out) -> bool:
 
     out.ok(f"{len(ALL_VANTAGES)} vantage points across {len(LENSES)} lenses (cities · languages · world)")
 
-    if brief.available():
-        out.ok(f"Claude analyst enabled ({brief.MODEL}): written analysis + query translation")
-    else:
-        out.warn("No ANTHROPIC_API_KEY: analysis is generated from the numbers instead of written by Claude")
+    from .translations import BUILTIN
+
+    out.ok(f"Language mode: built-in wording for {len(BUILTIN)} common searches in 9 Indian languages, plus your own")
 
     dist = Path(os.getenv("PARALLAX_DIST", ROOT / "frontend" / "dist"))
     if (dist / "index.html").exists():

@@ -10,6 +10,7 @@ export interface ScanOptions {
   custom: Vantage[];
   home: string;
   site: string;
+  wording?: Record<string, string>;
 }
 
 const LENS_LABEL: Record<string, { title: string; sub: string }> = {
@@ -125,6 +126,33 @@ export default function ScanForm({ config, initial, creditsLeft, compact, onSubm
     });
   }, [lens]);
 
+  const [wording, setWording] = useState<Record<string, string>>({});
+  const [edited, setEdited] = useState<Set<string>>(new Set());
+  const [showWording, setShowWording] = useState(false);
+
+  // Language mode: pre-fill each language's wording from the built-in list (never overwriting what you typed).
+  useEffect(() => {
+    if (lensId !== "languages" || !query.trim()) return;
+    const ctl = new AbortController();
+    const t = setTimeout(() => {
+      fetch(`/api/translations?q=${encodeURIComponent(query.trim())}`, { signal: ctl.signal })
+        .then((r) => r.json())
+        .then((tr: Record<string, string>) =>
+          setWording((cur) => {
+            const next: Record<string, string> = {};
+            for (const [hl, w] of Object.entries(cur)) if (edited.has(hl)) next[hl] = w;
+            for (const [hl, w] of Object.entries(tr)) if (!edited.has(hl)) next[hl] = w;
+            return next;
+          }),
+        )
+        .catch(() => {});
+    }, 250);
+    return () => {
+      clearTimeout(t);
+      ctl.abort();
+    };
+  }, [query, lensId, edited]);
+
   const places = useMemo(() => [...(lens?.vantages.filter((v) => selected.includes(v.id)) ?? []), ...custom], [lens, selected, custom]);
 
   useEffect(() => {
@@ -151,7 +179,7 @@ export default function ScanForm({ config, initial, creditsLeft, compact, onSubm
     } catch {
       /* ignore */
     }
-    onSubmit({ query: query.trim(), lens: lensId, vantageIds: selected, custom, home, site: normalizeDomain(site) });
+    onSubmit({ query: query.trim(), lens: lensId, vantageIds: selected, custom, home, site: normalizeDomain(site), wording: lensId === "languages" ? wording : undefined });
   };
 
   return (
@@ -207,6 +235,48 @@ export default function ScanForm({ config, initial, creditsLeft, compact, onSubm
           {more ? "Hide options" : `Choose places (${places.length}) · track a website`}
         </button>
       </div>
+
+      {lensId === "languages" && (() => {
+        const langs = places.filter((p) => p.translate);
+        const filled = langs.filter((p) => wording[p.hl]?.trim()).length;
+        return (
+          <div className="mt-4 rounded-md border border-rule bg-card p-4">
+            <button type="button" onClick={() => setShowWording(!showWording)} className="flex w-full flex-wrap items-center justify-between gap-2 text-left text-[14px]">
+              <span className="flex items-center font-medium">
+                Search wording in each language
+                <Help wide>For a fair comparison, each language should be searched in its own script, the way a native speaker would type it. Common searches have wording built in. For anything else, type or paste your own; a blank language uses your original words.</Help>
+              </span>
+              <span className={filled === langs.length ? "text-good" : "text-ink-2"}>
+                {filled}/{langs.length} filled {showWording ? "▴" : "▾"}
+              </span>
+            </button>
+            {!showWording && filled < langs.length && (
+              <p className="mt-1 text-[13px] text-muted">
+                {filled ? "Some languages still use your original words." : "No built-in wording for this search yet."} Open this to type each language's version.
+              </p>
+            )}
+            {showWording && (
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                {langs.map((p) => (
+                  <label key={p.id} className="flex items-center gap-2 text-[14px]">
+                    <span className="w-24 shrink-0 text-ink-2">{p.lang_name}</span>
+                    <input
+                      value={wording[p.hl] ?? ""}
+                      onChange={(e) => {
+                        setWording({ ...wording, [p.hl]: e.target.value });
+                        setEdited(new Set(edited).add(p.hl));
+                      }}
+                      placeholder={query || "type the search in this language"}
+                      lang={p.hl}
+                      className="field min-w-0 flex-1 py-1.5"
+                    />
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {more && (
         <div className="mt-4 space-y-4 rounded-md border border-rule bg-card p-4">

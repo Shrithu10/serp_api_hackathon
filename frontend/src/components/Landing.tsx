@@ -190,7 +190,7 @@ export default function Landing({ config, creditsLeft, onScan, onOpen }: Props) 
           </div>
           <ol className="space-y-6 lg:col-span-2">
             {[
-              ["You type one search.", "Pick whether to compare cities, languages or countries. In language mode the search is translated into each language's own script."],
+              ["You type one search.", "Pick whether to compare cities, languages or countries. In language mode each language is searched in its own script: common searches have wording built in, and you can type your own for anything else."],
               ["We search from every place at once.", "Using SerpApi, the search runs in each place with that place's location and language settings. This is what a person there would see on Google, including the AI Overview, local results and top stories."],
               ["We line the results up and compare them.", "You get a plain-language summary, a list of what you would miss from your own city, a side-by-side view of every place, and exports for further work. Every search is saved so you can reopen it or check later what changed."],
             ].map(([t, b], i) => (

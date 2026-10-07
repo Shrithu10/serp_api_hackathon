@@ -115,7 +115,7 @@ export default function App() {
       setFocusId(null);
       setPrev(null);
       setEditing(false);
-      start({ query: o.query, lens: o.lens, vantageIds: o.vantageIds, custom: o.custom, trends: true });
+      start({ query: o.query, lens: o.lens, vantageIds: o.vantageIds, custom: o.custom, trends: true, wording: o.wording });
       const next: Route = { page: "scan", q: o.query, lens: o.lens, home: o.home, site: o.site || undefined };
       setRoute(next);
       writeRoute(next);
@@ -329,7 +329,7 @@ export default function App() {
             {a && (
               <>
                 <Section id="summary" kicker="The short answer" title={`Does where you search change what you see?`}>
-                  <Summary a={a} lens={state.lens} vmap={vmap} brief={state.brief} streaming={state.status === "analyzing"} ai={!!config?.ai} changes={changes} prevWhen={prev ? timeAgo(prev.created_at) : null} />
+                  <Summary a={a} lens={state.lens} vmap={vmap} brief={state.brief} streaming={state.status === "analyzing"} changes={changes} prevWhen={prev ? timeAgo(prev.created_at) : null} />
                   <div className="mt-10">
                     <Concentration a={a} places={ids.length} sample={!!state.done?.synthetic} />
                   </div>
@@ -447,7 +447,7 @@ export default function App() {
                     </div>
                     <div>
                       <h3 className="text-[18px] text-ink">Data sources</h3>
-                      <p className="mt-2">Google Search, Google AI Overview and Google Trends, fetched through SerpApi. The analysis text is written by Claude when an Anthropic key is set.</p>
+                      <p className="mt-2">Google Search, Google AI Overview, Google Trends, Locations and Account, all fetched through SerpApi. The written summary is generated from the numbers; no AI service is involved.</p>
                     </div>
                   </div>
                 </section>
@@ -472,7 +472,6 @@ export default function App() {
               <div className="p-5">
                 <div className="font-serif text-[22px] font-semibold">You're on live data</div>
                 <p className="mt-2 text-ink-2">Searches run against Google through your SerpApi account{creditsLeft != null ? `, which has ${creditsLeft} searches left this month` : ""}. Results fetched in the last 6 hours are reused for free.</p>
-                <p className="mt-2 text-ink-2">{config.ai ? `Written analysis and translations by ${config.model}.` : "Add ANTHROPIC_API_KEY to .env for written analysis and translation in language mode."}</p>
               </div>
             ) : (
               <SetupGuide config={config} compact />

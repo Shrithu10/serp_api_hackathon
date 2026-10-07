@@ -22,8 +22,6 @@ export interface Lens {
 
 export interface Config {
   live: boolean;
-  ai: boolean;
-  model: string | null;
   lenses: Lens[];
   max_vantages: number;
 }

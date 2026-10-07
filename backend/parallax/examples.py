@@ -17,6 +17,7 @@ from . import storage
 from .brief import _offline
 from .engine import run_scan, trends_for
 from .serp import SerpGateway
+from .translations import resolve
 from .vantages import LENSES
 
 EXAMPLES = [
@@ -49,7 +50,7 @@ async def build(replace: bool = False) -> list[str]:
         text = "".join([c async for c in _offline(analysis, vdicts)]) if analysis.get("ok") else ""
         done = {"elapsed": 0, "credits": 0, "cached": 0, "requests": len(origins), "synthetic": "synthetic" in origins, "recorded": origins.count("recorded")}
         ids.append(storage.save(q, lens, False, {
-            "query": q, "lens": lens, "vantages": vdicts, "queries": {v.id: q for v in vantages}, "results": results,
+            "query": q, "lens": lens, "vantages": vdicts, "queries": resolve(q, vantages), "results": results,
             "errors": {}, "analysis": analysis, "trends": tr, "brief": text, "done": done,
         }, example=True))
     return ids

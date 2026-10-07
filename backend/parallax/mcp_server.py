@@ -1,7 +1,7 @@
 """PARALLAX as an MCP server: lets any AI agent ask "does this query look
 different across India / across languages / across the world?"
 
-Run:  python -m parallax.mcp_server            (stdio, for Claude Desktop / Claude Code / Cursor)
+Run:  python -m parallax.mcp_server            (stdio, for any MCP-capable AI agent or IDE)
 """
 
 from __future__ import annotations

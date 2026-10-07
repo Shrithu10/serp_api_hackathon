@@ -52,12 +52,11 @@ interface Props {
   vmap: Record<string, Vantage>;
   brief: string;
   streaming: boolean;
-  ai: boolean;
   changes: ReturnType<typeof changesSince> | null;
   prevWhen: string | null;
 }
 
-export default function Summary({ a, lens, vmap, brief, streaming, ai, changes, prevWhen }: Props) {
+export default function Summary({ a, lens, vmap, brief, streaming, changes, prevWhen }: Props) {
   const p = a.plain;
   const h = headline(a, lens);
   const stats: { big: ReactNode; label: ReactNode; help: string }[] = [
@@ -143,8 +142,8 @@ export default function Summary({ a, lens, vmap, brief, streaming, ai, changes, 
       <div className="mt-10 grid gap-8 lg:grid-cols-[1fr_320px]">
         <div>
           <div className="mb-3 flex items-center text-[13px] font-semibold text-accent">
-            {ai ? "Analysis written by Claude from these results" : "Automatic summary"}
-            <Help>{ai ? "Claude reads the numbers and every place's results, then explains them in plain words. It only describes what's in the data." : "Add an ANTHROPIC_API_KEY to get a written analysis. Until then this summary is generated from the numbers."}</Help>
+            What the numbers say
+            <Help>Written automatically from the measurements on this page, so it only says what the data shows.</Help>
           </div>
           <BriefText text={brief} streaming={streaming} />
         </div>

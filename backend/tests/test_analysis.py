@@ -128,3 +128,16 @@ def test_examples_build_offline(tmp_path, monkeypatch):
     assert storage.list_examples()[0]["summary"]["example"] is True
     assert storage.list_scans() == []  # examples stay out of personal history
     assert asyncio.run(examples.build()) == []  # idempotent
+
+
+def test_language_wording():
+    from parallax.translations import resolve
+
+    q = "Is Ayurveda effective?"
+    out = resolve(q, LANGUAGES)
+    assert out["en-delhi"] == q  # English stays as typed
+    assert out["hi-lucknow"] == "क्या आयुर्वेद प्रभावी है"  # built-in wording
+    custom = resolve("best mango variety", LANGUAGES, {"ta": "சிறந்த மாம்பழ வகை", "hi": "  "})
+    assert custom["ta-chennai"] == "சிறந்த மாம்பழ வகை"  # typed wording wins
+    assert custom["hi-lucknow"] == "best mango variety"  # blank falls back to the original
+    assert resolve(q, CITIES) == {v.id: q for v in CITIES}  # cities lens never rewrites

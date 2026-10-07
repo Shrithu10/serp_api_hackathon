@@ -34,7 +34,7 @@ Filter bubbles are usually discussed for social feeds. **Search is the bigger an
 ## What you get from one search
 
 **1. The short answer.** One sentence in plain English, followed by four numbers anyone can read:
-*“6.2 of 10 top links differ between any two places”*, *“7 of 12 places show the same #1 result”*, *“6 groups of places see similar pages”*, *“5 of 12 places got Google's AI answer”*. Every number has a **?** that explains it. A written analysis (by Claude when a key is set) ends with a concrete *What to do*.
+*“6.2 of 10 top links differ between any two places”*, *“7 of 12 places show the same #1 result”*, *“6 groups of places see similar pages”*, *“5 of 12 places got Google's AI answer”*. Every number has a **?** that explains it. A short written summary, generated directly from the numbers, ends with a concrete *What to do*.
 
 ![Short answer](docs/short-answer.jpg)
 
@@ -98,7 +98,7 @@ Filter bubbles are usually discussed for social feeds. **Search is the bigger an
 | Mode | Places | What changes between them |
 |---|---|---|
 | **Indian cities** | Mumbai, Delhi, Bengaluru, Chennai, Kolkata, Hyderabad, Pune, Ahmedabad, Jaipur, Lucknow, Guwahati, Kochi | Location only. Same language, same country |
-| **Indian languages** | English, हिन्दी, বাংলা, தமிழ், తెలుగు, मराठी, ગુજરાતી, ಕನ್ನಡ, മലയാളം, ਪੰਜਾਬੀ, each from a city where it's spoken | Language and location. The search is translated into each script by Claude |
+| **Indian languages** | English, हिन्दी, বাংলা, தமிழ், తెలుగు, मराठी, ગુજરાતી, ಕನ್ನಡ, മലയാളം, ਪੰਜਾਬੀ, each from a city where it's spoken | Language and location. Each language is searched in its own script: built-in wording for common searches, and boxes to type your own for anything else |
 | **India vs world** | Delhi, Mumbai, New York, San Francisco, London, Dubai, Singapore, Toronto, Sydney, Dhaka | Country, Google domain and location |
 
 You can switch off any place to save searches, or **add any place on Earth** (autocomplete from the SerpApi Locations API).
@@ -150,7 +150,8 @@ All of it lives in [`backend/parallax/analysis.py`](backend/parallax/analysis.py
 │ serp.py     disk cache · record/replay fixtures · offline demo          │
 │ normalize.py raw SERP → comparable shape (URL canonicalisation, eTLD+1) │
 │ analysis.py RBO · clustering · log-odds · taxonomy · AI-overview overlap│
-│ brief.py    Claude plain-language analysis + query translation          │
+│ brief.py    plain-language summary generated from the numbers           │
+│ translations.py  native-script wording for the language lens            │
 │ storage.py  SQLite history: reopen for free, “what changed since”       │
 │ mcp_server.py  the same engine exposed as an MCP tool for AI agents     │
 └─────────────────────────────────────────────────────────────────────────┘
@@ -167,7 +168,7 @@ Results stream to the browser as each search lands, so the progress checklist an
 ```bash
 git clone https://github.com/shrithu10/serp_api_hackathon.git
 cd serp_api_hackathon
-cp .env.example .env        # add SERPAPI_API_KEY (and optionally ANTHROPIC_API_KEY)
+cp .env.example .env        # add your SERPAPI_API_KEY
 ./run.sh                    # installs deps, builds the UI, serves http://localhost:8000
 ```
 
@@ -193,7 +194,7 @@ $ cd backend && python -m parallax
   ✓ Disk cache ready: 41 saved responses, reused for 6 h (repeat searches cost 0 credits)
   ✓ History database ready: 7 saved searches, 6 ready-made examples (parallax.db)
   ✓ 32 vantage points across 3 lenses (cities · languages · world)
-  ✓ Claude analyst enabled: written analysis + query translation
+  ✓ Language mode: built-in wording for 6 common searches in 9 Indian languages, plus your own
   ✓ Web interface built
   ✓ MCP tool server available: `python -m parallax mcp` (tools: parallax_scan, parallax_lenses)
 
@@ -213,7 +214,6 @@ Every line is a real startup check: missing keys show as warnings, and broken se
 | Variable | Required | Purpose |
 |---|---|---|
 | `SERPAPI_API_KEY` | for live data | Free key at [serpapi.com](https://serpapi.com/users/sign_up), 250 searches/month |
-| `ANTHROPIC_API_KEY` | optional | Claude writes the field report and translates queries for the language lens |
 | `PARALLAX_CACHE_TTL` | optional | Seconds to reuse a cached SerpApi response (default 21600) |
 | `PARALLAX_RECORD` | optional | `1` = also save responses to `backend/fixtures/` for offline demos |
 
@@ -259,7 +259,8 @@ backend/parallax/
   vantages.py     cities / languages / world presets → SerpApi params
   normalize.py    SERP → comparable records
   analysis.py     RBO, clustering, log-odds, taxonomy, AI-overview overlap
-  brief.py        Claude plain-language analysis and translation (+ offline fallback)
+  brief.py        plain-language summary generated from the numbers
+  translations.py native-script wording for common searches (language lens)
   storage.py      saved searches (SQLite), previous-run lookup for change tracking
   mcp_server.py   MCP tools for agents
   record.py       record real responses as replayable fixtures

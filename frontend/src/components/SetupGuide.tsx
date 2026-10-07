@@ -1,6 +1,6 @@
 import type { Config } from "../lib/types";
 
-export default function SetupGuide({ config, compact }: { config: Config; compact?: boolean }) {
+export default function SetupGuide({ compact }: { config?: Config; compact?: boolean }) {
   return (
     <div className={`rounded-md border border-gold/40 bg-[#fbf3dc] ${compact ? "p-4" : "p-5 md:p-6"}`}>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -18,7 +18,6 @@ export default function SetupGuide({ config, compact }: { config: Config; compac
         </li>
         <li>
           <b className="text-ink">3. Restart Parallax</b> with <code className="rounded bg-paper-2 px-1">./run.sh</code>. The badge at the top will switch to “Live data”.
-          {!config.ai && <span className="mt-1 block text-[13px]">Optional: add <code className="rounded bg-paper-2 px-1">ANTHROPIC_API_KEY</code> for a written analysis and automatic translation in language mode.</span>}
         </li>
       </ol>
     </div>

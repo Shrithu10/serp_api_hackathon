@@ -78,7 +78,7 @@ function reducer(state: ScanState, a: Action): ScanState {
         logs: log(state, { kind: "info", text: `dispatching ${a.vantages.length} SerpApi searches · ${a.live ? "LIVE" : "DEMO"}` }),
       };
     case "translations":
-      return { ...state, queries: a.queries, logs: log(state, { kind: "ai", text: `query translated into ${new Set(Object.values(a.queries)).size} scripts` }) };
+      return { ...state, queries: a.queries, logs: log(state, { kind: "ai", text: `native-script wording for ${new Set(Object.values(a.queries)).size - 1} languages` }) };
     case "vantage": {
       const v = state.vantages.find((x) => x.id === a.id);
       if (a.error || !a.data) {
@@ -129,6 +129,7 @@ export interface ScanRequest {
   vantageIds: string[];
   custom: Partial<Vantage>[];
   trends: boolean;
+  wording?: Record<string, string>;
 }
 
 export function useScan() {
@@ -147,6 +148,7 @@ export function useScan() {
       const p = new URLSearchParams({ q: req.query, lens: req.lens, trends: String(req.trends) });
       if (req.vantageIds.length) p.set("vantages", req.vantageIds.join(","));
       if (req.custom.length) p.set("custom", JSON.stringify(req.custom));
+      if (req.wording && Object.values(req.wording).some((w) => w.trim())) p.set("wording", JSON.stringify(req.wording));
       const src = new EventSource(`/api/scan?${p}`);
       es.current = src;
       const on = <T,>(name: string, fn: (d: T) => void) =>

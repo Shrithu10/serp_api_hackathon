@@ -18,7 +18,7 @@ from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse  # noqa: E402
 from fastapi.staticfiles import StaticFiles  # noqa: E402
 
-from . import brief, storage  # noqa: E402
+from . import brief, storage, translations  # noqa: E402
 from .analysis import analyze  # noqa: E402
 from .engine import gateway, search_vantage, trends_for  # noqa: E402
 from .vantages import ALL_VANTAGES, LENSES, Vantage, custom_vantage  # noqa: E402
@@ -37,8 +37,6 @@ def sse(event: str, data) -> str:
 async def config():
     return {
         "live": gateway.live,
-        "ai": brief.available(),
-        "model": brief.MODEL if brief.available() else None,
         "lenses": [lens.to_dict() for lens in LENSES.values()],
         "max_vantages": MAX_VANTAGES,
     }
@@ -78,6 +76,12 @@ async def _seed_examples():
     asyncio.create_task(build())
 
 
+@app.get("/api/translations")
+async def translations_for(q: str = Query("", max_length=200)):
+    """Built-in native-script wording for a search, used to pre-fill the form."""
+    return translations.lookup(q)
+
+
 @app.get("/api/examples")
 async def examples():
     return storage.list_examples()
@@ -115,6 +119,7 @@ async def scan(
     custom: str = "",
     trends: bool = True,
     follow_ai: bool = True,
+    wording: str = "",
 ):
     q = q.strip()
     base = LENSES.get(lens) or LENSES["cities"]
@@ -130,20 +135,19 @@ async def scan(
             seen.add(v.id)
             uniq.append(v)
     chosen = uniq[:MAX_VANTAGES]
+    try:
+        overrides = {str(k): str(v) for k, v in json.loads(wording).items()} if wording else {}
+    except (ValueError, AttributeError):
+        overrides = {}
 
     async def stream():
         started = time.perf_counter()
         vdicts = [v.to_dict() for v in chosen]
-        yield sse("plan", {"query": q, "lens": lens, "vantages": vdicts, "live": gateway.live, "ai": brief.available()})
+        yield sse("plan", {"query": q, "lens": lens, "vantages": vdicts, "live": gateway.live})
 
-        queries = {v.id: q for v in chosen}
-        needs = {v.hl: v.lang_name for v in chosen if v.translate}
-        if needs:
-            tr = await brief.translate(q, needs)
-            for v in chosen:
-                if v.translate and tr.get(v.hl):
-                    queries[v.id] = tr[v.hl]
-            yield sse("translations", {"queries": queries, "translated": bool(tr)})
+        queries = translations.resolve(q, chosen, overrides)
+        if any(v.translate for v in chosen):
+            yield sse("translations", {"queries": queries, "translated": any(queries[v.id] != q for v in chosen)})
 
         results: dict[str, dict] = {}
         errors: dict[str, str] = {}
