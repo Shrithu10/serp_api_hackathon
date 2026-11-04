@@ -263,7 +263,7 @@ class Agent extends EventEmitter {
     this.screen.on('signal', (data) => { if (this.streamCid) this._send(this.streamCid, { t: 'stream.signal', ...data }); });
     this.screen.on('state', (st) => {
       if (this.streamCid) this._send(this.streamCid, { t: 'stream.state', ...st });
-      if (st.state === 'stopped' || st.state === 'error') { this.streamCid = null; }
+      if (st.state === 'stopped' || st.state === 'error') { this.streamCid = null; try { this.screen.stop(); } catch { /* */ } }
       this.emit('state');
     });
   }

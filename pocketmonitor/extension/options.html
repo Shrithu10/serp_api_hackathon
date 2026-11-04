@@ -1,0 +1,17 @@
+<!doctype html><meta charset="utf-8"><title>PocketMonitor Browser Link</title>
+<style>
+:root{color-scheme:light dark}body{font:14px/1.5 system-ui,sans-serif;max-width:560px;margin:32px auto;padding:0 18px}
+h1{font-size:20px}input[type=text]{width:100%;padding:10px;font:inherit;border-radius:8px;border:1px solid #8885;box-sizing:border-box}
+button{font:inherit;font-weight:600;padding:9px 14px;border:0;border-radius:8px;background:#4f46e5;color:#fff;cursor:pointer}
+.card{border:1px solid #8884;border-radius:12px;padding:14px 16px;margin:14px 0}.ok{color:#16a34a}.bad{color:#dc2626}.muted{opacity:.7}label.t{display:flex;gap:10px;align-items:center;margin:8px 0}
+</style>
+<h1>PocketMonitor Browser Link</h1>
+<p class="muted">Lets the PocketMonitor app on this computer show your own open tabs on your own phone.</p>
+<div class="card"><b>1. Paste the key</b><p class="muted">In the PocketMonitor app → Browser activity → “Install the browser extension” → <i>Copy key</i>.</p>
+<input type="text" id="token" placeholder="Paste key here" autocomplete="off"> <p><button id="save">Save and test</button> <span id="result"></span></p></div>
+<div class="card"><b>2. Choose what is shared</b>
+<label class="t"><input type="checkbox" id="enabled"> Share my tabs with the PocketMonitor app</label>
+<label class="t"><input type="checkbox" id="titles"> Include page titles (otherwise just website domains)</label></div>
+<div class="card"><b>Exactly what is sent</b><ul><li>Tab title (optional) and website domain, e.g. <code>github.com</code></li><li>Which tab is active, pinned or playing audio</li></ul>
+<b>Never sent:</b> page content, full web addresses, passwords, form data, keystrokes, browsing history, or anything from private/incognito windows (this extension is not allowed to run there). Data goes only to <code>127.0.0.1</code> on this computer.</div>
+<script src="options.js"></script>

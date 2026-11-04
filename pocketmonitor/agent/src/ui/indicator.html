@@ -1,0 +1,15 @@
+<!doctype html><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'; script-src 'self' 'unsafe-inline'">
+<style>
+html,body{margin:0;background:transparent;font:13px/1 "Segoe UI",system-ui,sans-serif;-webkit-user-select:none;overflow:hidden}
+#p{margin:4px;height:36px;border-radius:99px;background:#0f172ae6;color:#fff;display:flex;align-items:center;gap:10px;padding:0 6px 0 14px;box-shadow:0 2px 12px #0006}
+#d{width:9px;height:9px;border-radius:50%;background:#34d399;animation:b 1.6s infinite}.s #d{background:#ef4444}
+@keyframes b{50%{opacity:.35}}
+#t{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+button{border:0;border-radius:99px;background:#ffffff26;color:#fff;padding:7px 12px;font:inherit;font-weight:600;cursor:pointer;display:none}.s button{display:block}button:hover{background:#ffffff40}
+</style>
+<div id="p"><span id="d"></span><span id="t"></span><button id="x">Stop</button></div>
+<script>
+const p=document.getElementById('p'),t=document.getElementById('t');
+pmUI.onIndicator(m=>{p.className=m.mode==='stream'?'s':'';t.textContent=m.mode==='stream'?'PocketMonitor · your screen is being viewed':'PocketMonitor · your phone is viewing this laptop'});
+document.getElementById('x').onclick=()=>pmUI.action('stopStream');
+</script>

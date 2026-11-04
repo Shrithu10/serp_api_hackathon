@@ -402,7 +402,7 @@ const Live = {
         if (pc.connectionState === 'failed') this.fallback('failed');
         if (pc.connectionState === 'disconnected') { clearTimeout(this.connTimer); this.connTimer = setTimeout(() => pc === this.pc && pc.connectionState !== 'connected' && this.fallback('disconnected'), 5000); }
       };
-      clearTimeout(this.connTimer); this.connTimer = setTimeout(() => pc === this.pc && pc.connectionState !== 'connected' && this.fallback('timeout'), 9000);
+      clearTimeout(this.connTimer); this.connTimer = setTimeout(() => pc === this.pc && pc.connectionState !== 'connected' && this.fallback('timeout'), 6000);
       await pc.setRemoteDescription({ type: 'offer', sdp: m.sdp });
       for (const c of this.pendingIce.splice(0)) pc.addIceCandidate(c).catch(() => {});
       const ans = await pc.createAnswer(); await pc.setLocalDescription(ans);
@@ -473,7 +473,7 @@ function drawLive() {
     $('#qSel').onchange = (e) => { S.quality = e.target.value; localStorage.setItem('pm.q', S.quality); Conn.send({ t: 'stream.quality', quality: S.quality }); };
     $('#dSel').onchange = (e) => { S.display = e.target.value; Live.stop(false); Live.start(); };
     $('#stopBtn').onclick = () => { Live.stop(false); setTab('overview'); };
-    Conn.request('displays').then((list) => { const sel = $('#dSel'); if (!sel || !list.length) return; sel.innerHTML = list.map((d) => `<option value="${esc(d.id)}" ${S.display === d.id ? 'selected' : ''}>${esc(d.name)} (${d.w}×${d.h})${d.primary ? ' · main' : ''}</option>`).join(''); }).catch(() => {});
+    Conn.request('displays').then((list) => { const sel = $('#dSel'); if (!sel || !list.length) return; sel.innerHTML = list.map((d) => `<option value="${esc(d.id)}" ${S.display === d.id ? 'selected' : ''}>${esc(d.name)}${d.primary ? ' (main)' : ''}</option>`).join(''); }).catch(() => {});
     const z = Live.z; const zb = $('#zoomBtn'); setInterval(() => { const b = $('#zoomBtn'); if (b) b.textContent = Live.z.s.toFixed(1).replace('.0', '') + '×'; }, 400); void z; void zb;
   }
   if (S.paused || S.presence.state === 'paused') Live.setMsg('Broadcasting is paused on the laptop');

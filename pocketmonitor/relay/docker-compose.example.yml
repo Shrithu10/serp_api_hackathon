@@ -1,0 +1,18 @@
+# Relay + free HTTPS via Caddy. Replace pm.example.com with your domain (A record -> this server).
+services:
+  relay:
+    build: .
+    restart: unless-stopped
+    volumes: [relay-data:/data]
+    environment:
+      # REGISTRATION_TOKEN: "choose-a-long-random-string"   # optional: only your laptop can register
+      # TURN_URLS: "turn:turn.example.com:3478"             # optional TURN for strict networks
+      # TURN_SECRET: "coturn-static-auth-secret"
+      PORT: "8787"
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    command: caddy reverse-proxy --from pm.example.com --to relay:8787
+    volumes: [caddy-data:/data]
+volumes: { relay-data: {}, caddy-data: {} }

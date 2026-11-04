@@ -1,0 +1,17 @@
+name: PocketMonitor Windows installer
+on:
+  workflow_dispatch:
+  push:
+    tags: ['pocketmonitor-v*']
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults: { run: { working-directory: pocketmonitor/agent } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm install --no-audit --no-fund
+      - run: npx electron-builder --win nsis --publish never
+      - uses: actions/upload-artifact@v4
+        with: { name: PocketMonitor-Setup, path: pocketmonitor/agent/dist/*.exe }

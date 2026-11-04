@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "PocketMonitor Browser Link",
+  "version": "1.0.0",
+  "description": "Shares your open tab titles and website domains with the PocketMonitor app on this computer, so you can see your own browser activity on your own phone.",
+  "permissions": ["tabs", "alarms", "storage"],
+  "host_permissions": ["http://127.0.0.1:47821/*"],
+  "background": { "service_worker": "background.js" },
+  "options_page": "options.html",
+  "action": { "default_popup": "popup.html", "default_title": "PocketMonitor" },
+  "incognito": "not_allowed",
+  "icons": { "16": "icon-16.png", "48": "icon-48.png", "128": "icon-128.png" }
+}

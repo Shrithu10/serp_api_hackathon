@@ -49,4 +49,6 @@ fs.copyFileSync(path.join(root, 'agent/build/icon.png'), path.join(root, 'agent/
 fs.writeFileSync(path.join(root, 'agent/src/ui/tray-on.png'), render(32, { dot: [52, 211, 153] }));
 fs.writeFileSync(path.join(root, 'agent/src/ui/tray-paused.png'), render(32, { dot: [251, 191, 36] }));
 fs.writeFileSync(path.join(root, 'agent/src/ui/tray-live.png'), render(32, { dot: [239, 68, 68] }));
+fs.mkdirSync(path.join(root, 'extension'), { recursive: true });
+for (const n of [16, 48, 128]) fs.writeFileSync(path.join(root, `extension/icon-${n}.png`), render(n, {}));
 console.log('icons written');

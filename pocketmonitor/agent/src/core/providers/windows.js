@@ -68,7 +68,7 @@ class WindowsProvider {
     this.child.on('exit', () => { this.child = null; if (!this.stopped) setTimeout(() => !this.stopped && this._spawn(), 3000); });
   }
   _line(line) {
-    const kind = line[0]; let data;
+    line = line.replace(/^\uFEFF/, ''); const kind = line[0]; let data;
     try { data = JSON.parse(line.slice(1) || 'null'); } catch { return; }
     if (kind === 'F') this.onEvent({ type: 'fg', fg: data && { pid: data.pid, name: data.name, exe: data.exe || '', desc: data.desc || data.name, title: data.title || '' } });
     else if (kind === 'P') {
