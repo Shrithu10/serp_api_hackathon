@@ -230,7 +230,7 @@ document.addEventListener('mouseout', e => { const t = e.target.closest('.card, 
   addEventListener('mousemove', e => { m.x = e.clientX; m.y = e.clientY; });
   (function draw(){
     ctx.clearRect(0,0,W,H);
-    const gold = getComputedStyle(document.documentElement).getPropertyValue('--gold').trim() || '#d4af37';
+    const gold = getComputedStyle(document.documentElement).getPropertyValue('--gold').trim() || '#4f7c68';
     ctx.fillStyle = gold; ctx.strokeStyle = gold;
     for (const p of pts) {
       p.x += p.vx; p.y += p.vy; if (p.x<0||p.x>W) p.vx*=-1; if (p.y<0||p.y>H) p.vy*=-1;
@@ -255,7 +255,7 @@ function matrix(){
   const cols = Math.floor(cv.width/16), y = Array(cols).fill(0), chars = 'ΣπλΩ01{}<>#ΔΨ∂∇アイウエオ'; cv.classList.add('on');
   const t0 = performance.now();
   (function f(t){
-    ctx.fillStyle = 'rgba(5,5,4,.12)'; ctx.fillRect(0,0,cv.width,cv.height); ctx.fillStyle = '#d4af37'; ctx.font = '15px JetBrains Mono, monospace';
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() + '1f'; ctx.fillRect(0,0,cv.width,cv.height); ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--gold').trim(); ctx.font = '15px JetBrains Mono, monospace';
     y.forEach((v,i) => { ctx.fillText(chars[Math.floor(Math.random()*chars.length)], i*16, v*16); y[i] = v*16 > cv.height && Math.random() > .975 ? 0 : v+1; });
     if (t - t0 < 7000) requestAnimationFrame(f); else { cv.classList.remove('on'); setTimeout(() => { ctx.clearRect(0,0,cv.width,cv.height); matrixOn = false; }, 700); }
   })(t0);
@@ -266,7 +266,7 @@ addEventListener('keydown', e => { kp = (e.key.toLowerCase() === konami[kp].toLo
 /* ---------------- THEME ---------------- */
 const root = document.documentElement;
 try { const t = localStorage.getItem('theme'); if (t) root.dataset.theme = t; } catch(e){}
-function toggleTheme(){ root.dataset.theme = root.dataset.theme === 'ink' ? 'parchment' : 'ink'; try { localStorage.setItem('theme', root.dataset.theme); } catch(e){} }
+function toggleTheme(){ root.dataset.theme = root.dataset.theme === 'ink' ? 'light' : 'ink'; try { localStorage.setItem('theme', root.dataset.theme); } catch(e){} }
 $('#theme-btn').addEventListener('click', toggleTheme);
 $('#top-btn').addEventListener('click', () => scrollTo({top:0, behavior:'smooth'}));
 
@@ -281,7 +281,7 @@ const CMDS = [
  {n:'Read on Medium', k:'link', f:() => open('https://shritijreddy.medium.com')},
  {n:'Send an email', k:'action', f:() => location.href = 'mailto:mathians1@gmail.com'},
  {n:'Download résumé', k:'action', f:() => open('assets/resume.pdf')},
- {n:'Toggle ink / parchment theme', k:'action', f:toggleTheme},
+ {n:'Toggle light / navy theme', k:'action', f:toggleTheme},
  {n:'Enter the matrix', k:'secret', f:matrix}
 ];
 const pal = $('#palette'), inp = $('#palette-input'), list = $('#palette-list'); let sel = 0, shown = CMDS;
@@ -346,8 +346,8 @@ async function loadRepos(){
     $('#gh-repos').textContent = u.public_repos ?? own.length; $('#gh-stars').textContent = own.reduce((a,r) => a+r.stargazers_count, 0);
     const lc = {}; own.forEach(r => r.language && (lc[r.language] = (lc[r.language]||0)+1)); const tot = Object.values(lc).reduce((a,b)=>a+b,0)||1;
     const ent = Object.entries(lc).sort((a,b)=>b[1]-a[1]);
-    $('#langbar').innerHTML = ent.map(([l,n]) => `<i style="flex:${n};background:${LC[l]||'#d4af37'}" title="${l}"></i>`).join('');
-    $('#langbar').insertAdjacentHTML('afterend', `<div class="langkey reveal in">${ent.map(([l,n]) => `<span><b style="background:${LC[l]||'#d4af37'}"></b>${l} ${Math.round(n/tot*100)}%</span>`).join('')}</div>`);
+    $('#langbar').innerHTML = ent.map(([l,n]) => `<i style="flex:${n};background:${LC[l]||'#4f7c68'}" title="${l}"></i>`).join('');
+    $('#langbar').insertAdjacentHTML('afterend', `<div class="langkey reveal in">${ent.map(([l,n]) => `<span><b style="background:${LC[l]||'#4f7c68'}"></b>${l} ${Math.round(n/tot*100)}%</span>`).join('')}</div>`);
     $('#repos').innerHTML = own.sort((a,b) => b.stargazers_count-a.stargazers_count || new Date(b.pushed_at)-new Date(a.pushed_at)).slice(0,6).map(r => `<a class="repo" href="${r.html_url}" target="_blank" rel="noopener"><b>${esc(r.name)}</b><p>${esc(r.description||'—')}</p><small>${r.language||''} · ★ ${r.stargazers_count} · ⑂ ${r.forks_count}</small></a>`).join('');
   } catch { $('#langbar').remove(); $('#gh-repos').textContent = $('#gh-stars').textContent = '—'; $('#repos').innerHTML = `<a class="repo" href="https://github.com/${GH}" target="_blank" rel="noopener"><b>github.com/${GH}</b><p>Repositories couldn't be loaded here — open the profile.</p></a>`; }
 }
