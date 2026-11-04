@@ -1,0 +1,49 @@
+{
+  "name": "keyflow",
+  "productName": "KeyFlow",
+  "version": "1.0.0",
+  "description": "Assign any keyboard shortcut to any action on your Windows PC.",
+  "main": "main/main.js",
+  "author": "KeyFlow",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test \"test/*.test.js\"",
+    "icons": "node scripts/make-icons.js",
+    "dist": "electron-builder --win nsis --x64",
+    "dist:portable": "electron-builder --win portable --x64"
+  },
+  "build": {
+    "appId": "app.keyflow.desktop",
+    "productName": "KeyFlow",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main/**",
+      "preload/**",
+      "renderer/**",
+      "shared/**",
+      "assets/**",
+      "package.json"
+    ],
+    "win": {
+      "icon": "assets/icon.ico",
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "deleteAppDataOnUninstall": false
+    }
+  },
+  "devDependencies": {
+    "electron": "^45.2.2",
+    "electron-builder": "^26.18.0"
+  }
+}

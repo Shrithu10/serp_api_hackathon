@@ -1,0 +1,27 @@
+name: KeyFlow Windows installer
+
+on:
+  push:
+    paths: ['keyflow/**', '.github/workflows/keyflow-windows.yml']
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: keyflow
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: keyflow/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: KeyFlow-Setup
+          path: keyflow/dist/*.exe

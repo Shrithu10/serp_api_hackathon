@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
+<title>KeyFlow palette</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body class="palette-body">
+<div class="palette">
+  <input id="q" type="text" placeholder="Run a shortcut…  (type to search, Enter to run, Esc to close)" autocomplete="off" spellcheck="false">
+  <ul id="list"></ul>
+</div>
+<script src="../shared/accelerator.js"></script>
+<script src="../shared/catalog.js"></script>
+<script src="palette.js"></script>
+</body>
+</html>
