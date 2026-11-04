@@ -11,7 +11,8 @@ function png(w, h, rgba) {
 }
 const rr = (x, y, cx, cy, hw, hh, r) => { const dx = Math.abs(x - cx) - (hw - r), dy = Math.abs(y - cy) - (hh - r); return Math.hypot(Math.max(dx, 0), Math.max(dy, 0)) + Math.min(Math.max(dx, dy), 0) - r; };
 
-function render(size, { maskable }) {
+function render(size, { maskable, dot }) {
+  const DOT = dot || [52, 211, 153];
   const buf = Buffer.alloc(size * size * 4); const S = 3;
   for (let py = 0; py < size; py++) for (let px = 0; px < size; px++) {
     let r = 0, g = 0, b = 0, a = 0;
@@ -26,8 +27,8 @@ function render(size, { maskable }) {
         if (outer <= 0 && inner > 0) col = [255, 255, 255];
         else if (inner <= 0) {
           col = [15, 23, 42];
-          if (Math.hypot(X - .5, Y - .44) < .075) col = [52, 211, 153]; // live dot
-          else if (Math.hypot(X - .5, Y - .44) < .12 && Math.hypot(X - .5, Y - .44) > .1) col = [52, 211, 153];
+          if (Math.hypot(X - .5, Y - .44) < .075) col = DOT; // live dot
+          else if (Math.hypot(X - .5, Y - .44) < .12 && Math.hypot(X - .5, Y - .44) > .1) col = DOT;
         }
         if (rr(X, Y, .5, .735, .035, .06, .01) <= 0 || rr(X, Y, .5, .79, .15, .022, .02) <= 0) col = [255, 255, 255];
       }
@@ -45,4 +46,7 @@ fs.writeFileSync(path.join(root, 'relay/public/icon-512.png'), render(512, {}));
 fs.writeFileSync(path.join(root, 'relay/public/icon-maskable-512.png'), render(512, { maskable: true }));
 fs.writeFileSync(path.join(root, 'agent/build/icon.png'), render(512, {}));
 fs.copyFileSync(path.join(root, 'agent/build/icon.png'), path.join(root, 'agent/src/ui/icon.png'));
+fs.writeFileSync(path.join(root, 'agent/src/ui/tray-on.png'), render(32, { dot: [52, 211, 153] }));
+fs.writeFileSync(path.join(root, 'agent/src/ui/tray-paused.png'), render(32, { dot: [251, 191, 36] }));
+fs.writeFileSync(path.join(root, 'agent/src/ui/tray-live.png'), render(32, { dot: [239, 68, 68] }));
 console.log('icons written');
