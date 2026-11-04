@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en" data-theme="ink">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shritij Reddy Ramidi — AI Engineer & Researcher</title>
+<meta name="description" content="AI engineer and researcher building agents, evaluations and production ML systems. Former Applied Scientist Intern at Amazon.">
+<meta property="og:title" content="Shritij Reddy Ramidi — AI Engineer & Researcher">
+<meta property="og:description" content="I build AI systems that work in production, and research how to tell when they don't.">
+<meta name="theme-color" content="#0b0a08">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230b0a08'/%3E%3Ctext x='50' y='66' font-size='54' text-anchor='middle' fill='%23d4af37' font-family='serif' font-style='italic'%3ESR%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- boot sequence -->
+<div id="boot" aria-hidden="true">
+  <pre id="boot-log"></pre>
+  <div class="boot-skip">press any key to skip</div>
+</div>
+
+<canvas id="bg" aria-hidden="true"></canvas>
+<canvas id="matrix" aria-hidden="true"></canvas>
+<div class="grain" aria-hidden="true"></div>
+<div id="cursor" aria-hidden="true"></div>
+<div id="progress" aria-hidden="true"></div>
+
+<header class="nav">
+  <a href="#top" class="logo" aria-label="Home"><span>S</span><i>R</i></a>
+  <nav>
+    <a href="#about">About</a>
+    <a href="#experience">Experience</a>
+    <a href="#research">Research</a>
+    <a href="#projects">Projects</a>
+    <a href="#github">GitHub</a>
+    <a href="#contact">Contact</a>
+  </nav>
+  <div class="nav-right">
+    <button id="palette-btn" class="kbd-btn" aria-label="Open command palette"><span>Search</span><kbd>⌘K</kbd></button>
+    <button id="theme-btn" class="icon-btn" aria-label="Toggle theme" title="Toggle theme">◐</button>
+  </div>
+</header>
+
+<main id="top">
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="status reveal"><span class="pulse"></span> Open to full-time AI · ML · SWE roles — available immediately</div>
+    <p class="eyebrow reveal">Hyderabad, India &nbsp;◆&nbsp; AI · Research · Systems</p>
+    <h1 class="name reveal" aria-label="Shritij Reddy Ramidi">
+      <span class="line"><span class="glitch" data-text="Shritij">Shritij</span></span>
+      <span class="line"><em>Reddy</em> Ramidi</span>
+    </h1>
+    <p class="roles reveal"><span class="role-prefix">I'm&nbsp;</span><span id="typed"></span><span class="caret">|</span></p>
+    <p class="lede reveal">I build AI systems that work in production — and research how to tell when they don't. Former Applied Scientist Intern at Amazon. Currently chasing the truth about how LLMs judge, explain and use tools.</p>
+    <div class="cta reveal">
+      <a class="btn primary" href="#projects" data-magnetic>View my work <span>→</span></a>
+      <a class="btn" href="assets/resume.pdf" data-magnetic>Resume ↓</a>
+      <a class="btn ghost" href="https://github.com/Shrithu10" target="_blank" rel="noopener" data-magnetic>GitHub ↗</a>
+      <a class="btn ghost" href="https://www.linkedin.com/in/shritij-reddy/" target="_blank" rel="noopener" data-magnetic>LinkedIn ↗</a>
+    </div>
+  </div>
+
+  <div class="hero-art reveal" aria-hidden="true">
+    <div class="orbit o1"><b>RAG</b><b>LLMs</b><b>GRPO</b></div>
+    <div class="orbit o2"><b>Agents</b><b>C++</b><b>Kafka</b><b>PyTorch</b></div>
+    <div class="orbit o3"><b>Speech</b><b>Java</b><b>FAISS</b></div>
+    <div class="crest"><span>SR</span></div>
+  </div>
+  <a href="#about" class="scroll-cue" aria-label="Scroll"><span></span></a>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee" aria-hidden="true">
+  <div class="track">
+    <span>PYTHON ◆ JAVA ◆ C++ ◆ TYPESCRIPT ◆ PYTORCH ◆ LANGGRAPH ◆ FAISS ◆ KAFKA ◆ FASTAPI ◆ REDIS ◆ AWS ◆ GCP ◆ DOCKER ◆ KUBERNETES ◆ RAG ◆ GRPO ◆ LORA ◆ </span>
+    <span>PYTHON ◆ JAVA ◆ C++ ◆ TYPESCRIPT ◆ PYTORCH ◆ LANGGRAPH ◆ FAISS ◆ KAFKA ◆ FASTAPI ◆ REDIS ◆ AWS ◆ GCP ◆ DOCKER ◆ KUBERNETES ◆ RAG ◆ GRPO ◆ LORA ◆ </span>
+  </div>
+</div>
+
+<!-- STATS -->
+<section class="stats">
+  <div class="stat reveal"><b data-count="3">0</b><span>National hackathon wins</span></div>
+  <div class="stat reveal"><b data-count="3">0</b><span>Papers under review</span></div>
+  <div class="stat reveal"><b data-count="450" data-suffix="+">0</b><span>LeetCode problems</span></div>
+  <div class="stat reveal"><b data-count="70000" data-suffix="">0</b><span>API calls in one benchmark</span></div>
+  <div class="stat reveal"><b data-count="25" data-suffix="M/s">0</b><span>Orders matched, C++ engine</span></div>
+</section>
+
+<!-- ABOUT -->
+<section id="about" class="sec">
+  <div class="sec-head reveal"><span class="num">01</span><h2>About</h2><div class="rule"></div></div>
+  <div class="about-grid">
+    <div class="about-text reveal">
+      <p class="dropcap">I'm Shritij, a Computer Science graduate from KMIT and a Data Science and Programming student at IIT Madras. I recently completed an Applied Scientist internship at Amazon in Bangalore, where I worked on image similarity and image-quality detection, and cleared the bar for an Applied Scientist I role.</p>
+      <p>Before that, I spent nine months at Techolution building speech pipelines, multi-agent LLM systems and RAG backends that served production traffic. Today I work as a part-time research assistant on LLM evaluation, and I have three papers under review on LLM judges and tool-using agents.</p>
+      <p>I've won three national hackathons — including first place at Smart India Hackathon 2024 — and I founded <a href="https://upsolveclub.com" target="_blank" rel="noopener">Upsolve Club</a>, an AI-native platform for competitive coders. I like problems that sit between research and real products.</p>
+      <p class="langs"><b>Speaks</b> English · Telugu · Hindi · Tamil · Bengali</p>
+    </div>
+    <aside class="term reveal tilt">
+      <div class="term-bar"><i></i><i></i><i></i><span>shritij@hyderabad:~</span></div>
+      <pre id="whoami"></pre>
+    </aside>
+  </div>
+</section>
+
+<!-- EXPERIENCE -->
+<section id="experience" class="sec">
+  <div class="sec-head reveal"><span class="num">02</span><h2>Experience</h2><div class="rule"></div></div>
+  <div class="timeline" id="timeline"></div>
+  <h3 class="sub reveal">Early experience — startups &amp; innovation</h3>
+  <div class="early" id="early"></div>
+</section>
+
+<!-- RESEARCH -->
+<section id="research" class="sec">
+  <div class="sec-head reveal"><span class="num">03</span><h2>Research</h2><div class="rule"></div></div>
+  <p class="sec-note reveal">Interests — LLM-as-a-judge bias · faithfulness of model explanations · auditing tool-using agents · LLM evaluation at scale · post-training &amp; RL for reasoning.</p>
+  <div class="papers" id="papers"></div>
+  <div class="links-row reveal">
+    <a href="https://openreview.net/profile?id=~Shritij_Reddy_Ramidi1" target="_blank" rel="noopener">OpenReview ↗</a>
+    <a href="https://orcid.org/0009-0008-5301-9019" target="_blank" rel="noopener">ORCID ↗</a>
+    <a href="https://shritijreddy.medium.com" target="_blank" rel="noopener">Medium ↗</a>
+  </div>
+</section>
+
+<!-- PROJECTS -->
+<section id="projects" class="sec">
+  <div class="sec-head reveal"><span class="num">04</span><h2>Projects</h2><div class="rule"></div></div>
+  <div class="filters reveal" id="filters">
+    <button class="on" data-f="all">All</button>
+    <button data-f="featured">Featured</button>
+    <button data-f="systems">Systems</button>
+    <button data-f="more">More</button>
+  </div>
+  <div class="grid" id="projects-grid"></div>
+</section>
+
+<!-- UPSOLVE -->
+<section class="upsolve reveal">
+  <div class="upsolve-inner">
+    <p class="eyebrow">Founder ◆ Solo build</p>
+    <h2>Upsolve <em>Club</em></h2>
+    <p>An AI-native platform that turns LeetCode, Codeforces and GitHub activity into live competition leaderboards — with streaks and anti-cheating checks. Built solo, directing Claude Code. Accepted into MongoDB for Startups.</p>
+    <a class="btn primary" href="https://upsolveclub.com" target="_blank" rel="noopener" data-magnetic>Visit upsolveclub.com <span>↗</span></a>
+  </div>
+</section>
+
+<!-- GITHUB -->
+<section id="github" class="sec">
+  <div class="sec-head reveal"><span class="num">05</span><h2>GitHub</h2><div class="rule"></div></div>
+  <div class="gh-stats reveal" id="gh-stats">
+    <div><b id="gh-total">—</b><span>contributions, last year</span></div>
+    <div><b id="gh-streak">—</b><span>current streak (days)</span></div>
+    <div><b id="gh-best">—</b><span>best day</span></div>
+    <div><b id="gh-repos">—</b><span>public repos</span></div>
+    <div><b id="gh-stars">—</b><span>stars earned</span></div>
+  </div>
+  <div class="heat-wrap reveal">
+    <div class="heat-scroll"><div id="heat-months"></div><div id="heat"></div></div>
+    <div class="heat-foot">
+      <span id="heat-note">Loading live contribution data…</span>
+      <span class="legend">Less <i class="l0"></i><i class="l1"></i><i class="l2"></i><i class="l3"></i><i class="l4"></i> More</span>
+    </div>
+  </div>
+  <div class="langbar reveal" id="langbar"></div>
+  <div class="repos" id="repos"></div>
+  <div class="tip" id="tip"></div>
+</section>
+
+<!-- RECOGNITION -->
+<section id="recognition" class="sec">
+  <div class="sec-head reveal"><span class="num">06</span><h2>Recognition</h2><div class="rule"></div></div>
+  <div class="ach" id="ach"></div>
+  <h3 class="sub reveal">Certifications</h3>
+  <div class="certs reveal">
+    <span>Google Professional Cloud Developer</span>
+    <span>Google Professional Machine Learning Engineer</span>
+    <span>Google Generative AI Leader</span>
+  </div>
+</section>
+
+<!-- SKILLS -->
+<section id="skills" class="sec">
+  <div class="sec-head reveal"><span class="num">07</span><h2>Toolkit</h2><div class="rule"></div></div>
+  <div class="skills" id="skills-grid"></div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact" class="sec contact">
+  <div class="sec-head reveal"><span class="num">08</span><h2>Contact</h2><div class="rule"></div></div>
+  <h3 class="big reveal">Let's build something <em>remarkable.</em></h3>
+  <a class="mail reveal" href="mailto:mathians1@gmail.com" data-magnetic>mathians1@gmail.com</a>
+  <div class="socials reveal">
+    <a href="https://github.com/Shrithu10" target="_blank" rel="noopener">GitHub</a>
+    <a href="https://www.linkedin.com/in/shritij-reddy/" target="_blank" rel="noopener">LinkedIn</a>
+    <a href="https://leetcode.com/u/shrithu/" target="_blank" rel="noopener">LeetCode</a>
+    <a href="https://shritijreddy.medium.com" target="_blank" rel="noopener">Medium</a>
+    <a href="https://openreview.net/profile?id=~Shritij_Reddy_Ramidi1" target="_blank" rel="noopener">OpenReview</a>
+    <a href="https://upsolveclub.com" target="_blank" rel="noopener">Upsolve Club</a>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <span>© <span id="year"></span> Shritij Reddy Ramidi</span>
+  <span class="hint">Psst — try <kbd>⌘/Ctrl K</kbd>, or the Konami code ↑↑↓↓←→←→BA</span>
+  <button id="top-btn" class="icon-btn" aria-label="Back to top">↑</button>
+</footer>
+
+<!-- command palette -->
+<div id="palette" class="palette" hidden>
+  <div class="palette-box" role="dialog" aria-label="Command palette">
+    <input id="palette-input" placeholder="Type a command or search…" autocomplete="off" spellcheck="false">
+    <ul id="palette-list"></ul>
+    <div class="palette-foot"><span>↑↓ navigate</span><span>↵ select</span><span>esc close</span></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
