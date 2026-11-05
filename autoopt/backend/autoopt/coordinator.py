@@ -352,6 +352,7 @@ class Coordinator:
                 "elapsed": round(self._now() if self.state == "running" else self.elapsed, 3),
                 "time_limit": self.config.time_limit,
                 "stop_reason": self.stop_reason,
+                "type": self.problem.type_name,
                 "sense": self.problem.sense,
                 "objective_name": self.problem.objective_name,
                 "best_objective": self.best_objective,
